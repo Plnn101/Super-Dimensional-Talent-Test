@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>升学天赋测评 - Riki 深度报告版</title>
+    <style>
+        /* ================= 核心品牌色盘 (Riki 暖色调) ================= */
+        :root {
+            --primary: #E57D5C;       /* 陶土橙 - 主色调 */
+            --primary-light: #FDF3ED; /* 淡橙色 - 交互背景 */
+            --bg-color: #FAF5F0;      /* 暖米色 - 全局底色 */
+            --card-bg: #FFFFFF;       /* 纯白 - 卡片底色 */
+            --text-main: #4A3A35;     /* 深咖色 - 主标题 */
+            --text-sub: #8C7B74;      /* 浅褐色 - 副标题 */
+            --border-color: #EBE1DA;  /* 柔和的分割线 */
+            --primary-gradient: linear-gradient(90deg, #F4A261, #E57D5C);
+        }
+
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+        
+        body { 
+            background-color: #EAE6E1; 
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; height: 100dvh; overflow: hidden; 
+        }
+
+        .app-wrapper {
+            width: 100%; max-width: 480px; height: 100%; 
+            background-color: var(--bg-color); position: relative; 
+            overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .view-container { 
+            display: none; width: 100%; height: 100%; padding: 20px; 
+            flex-direction: column; align-items: center; position: absolute;
+            top: 0; left: 0; overflow-y: auto; overflow-x: hidden; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        .view-container.active { display: flex; animation: fadeIn 0.4s ease forwards; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-out { animation: fadeOut 0.3s ease forwards !important; }
+        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-15px); } }
+
+        /* 顶部进度条 */
+        .header { width: 100%; text-align: center; margin-bottom: 20px; padding-top: 2vh; flex-shrink: 0;}
+        .header h2 { font-size: 20px; font-weight: 800; margin-bottom: 12px; color: var(--text-main); }
+        .progress-container { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: var(--primary-gradient); transition: width 0.3s ease; border-radius: 4px;}
+        .counter { margin-top: 8px; font-size: 13px; color: var(--text-sub); font-weight: bold; }
+
+        /* ================= 阶段 1：极速滑卡 ================= */
+        .card-stack { position: relative; width: 320px; height: 60vh; max-height: 440px; margin-top: 2vh; perspective: 1000px; touch-action: none; flex-shrink: 0;}
+        .card {
+            position: absolute; width: 100%; height: 100%; background: var(--card-bg); border-radius: 24px;
+            box-shadow: 0 12px 32px rgba(90, 69, 60, 0.08); display: flex; flex-direction: column;
+            padding: 24px 20px; text-align: center; cursor: grab; transform-origin: 50% 100%; will-change: transform; user-select: none;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .card.dragging { cursor: grabbing; transition: none; }
+        
+        .card-scene-wrapper { width: 100%; text-align: center; margin-bottom: 12px; flex-shrink: 0; }
+        .card-scene { font-size: 14px; font-weight: 800; color: #C64923; background: #FCE0D4; padding: 10px 18px; border-radius: 20px; display: inline-block; line-height: 1.4; }
+        .option-box { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .option-label { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;}
+        .option-text { font-size: 18px; font-weight: 700; line-height: 1.4; color: var(--text-main); }
+        .divider { height: 1px; width: 60%; background: var(--border-color); margin: 10px auto; position: relative; flex-shrink: 0;}
+        .divider::after { content: "VS"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 10px; font-size: 14px; font-weight: 900; color: var(--text-sub); border-radius: 10px;}
+        
+        .swipe-guide { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); width: 100%; pointer-events: none; z-index: 20; display: flex; justify-content: space-between; padding: 0 5px; }
+        .swipe-guide-text { font-size: 14px; font-weight: 800; background: var(--primary-gradient); color: #fff; padding: 8px 16px; border-radius: 20px; box-shadow: 0 4px 12px rgba(229, 125, 92, 0.4); }
+        .guide-l { animation: floatLeft 1.5s infinite; } .guide-r { animation: floatRight 1.5s infinite; }
+        @keyframes floatLeft { 0%, 100% { transform: translateX(0); opacity: 0.8; } 50% { transform: translateX(-10px); opacity: 1; } }
+        @keyframes floatRight { 0%, 100% { transform: translateX(0); opacity: 0.8; } 50% { transform: translateX(10px); opacity: 1; } }
+
+        .badge { position: absolute; top: 80px; padding: 6px 16px; border: 3px solid; border-radius: 12px; font-size: 22px; font-weight: 900; opacity: 0; pointer-events: none; z-index: 10; background: #fff;}
+        .badge.left { left: 20px; border-color: #73C088; color: #73C088; transform: rotate(-15deg); }
+        .badge.right { right: 20px; border-color: var(--primary); color: var(--primary); transform: rotate(15deg); }
+
+        /* ================= 过渡页 ================= */
+        .transition-screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; text-align: center; background: var(--bg-color); padding: 20px; position: absolute; top: 0; left: 0; z-index: 100; }
+        .transition-screen.active { display: flex; animation: fadeIn 0.4s ease forwards; }
+        .trans-icon { font-size: 70px; margin-bottom: 20px; animation: floatY 3s ease-in-out infinite; }
+        @keyframes floatY { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        .trans-title { font-size: 24px; font-weight: 900; margin-bottom: 12px; color: var(--text-main); }
+        .trans-desc { font-size: 15px; line-height: 1.6; color: var(--text-sub); font-weight: 600; }
+        .trans-highlight { display: inline-block; padding: 8px 20px; background: var(--primary-gradient); border-radius: 16px; font-size: 20px; font-weight: 900; margin: 16px 0; color: #fff; box-shadow: 0 8px 20px rgba(229, 125, 92, 0.3);}
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(5, end) infinite;}
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
+
+        /* ================= 阶段 2、3：问答与胶囊 ================= */
+        .q-container { width: 100%; display: flex; flex-direction: column; padding-bottom: 40px; }
+        .q-title { font-size: 20px; font-weight: 800; line-height: 1.5; margin-bottom: 24px; color: var(--text-main); }
+        .q-desc { font-size: 14px; color: var(--text-sub); margin-top: -16px; margin-bottom: 16px; line-height: 1.5; }
+        .inspiration-box { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .insp-pill { background: #fff; border: 1px solid var(--primary); color: var(--primary); padding: 8px 14px; border-radius: 16px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(226, 104, 68, 0.1);}
+        .insp-pill:active { transform: scale(0.95); background: #FCE0D4; }
+        .opt-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px;}
+        .opt-item { padding: 18px; background: #fff; border: 2px solid var(--border-color); border-radius: 16px; font-size: 15px; font-weight: 600; line-height: 1.5; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; color: var(--text-main);}
+        .opt-item.selected { background: #FDF1EB; border-color: var(--primary); color: var(--primary); transform: scale(0.98); }
+        .opt-item.selected .opt-letter { background: var(--primary-gradient); color: #fff; border-color: transparent;}
+        .opt-letter { min-width: 32px; height: 32px; border-radius: 8px; background: var(--bg-color); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; margin-right: 16px; color: var(--text-sub); }
+        .text-input { width: 100%; height: 140px; padding: 16px; border: 2px solid var(--border-color); border-radius: 16px; font-size: 16px; line-height: 1.5; resize: none; outline: none; transition: border-color 0.2s; margin-bottom: 24px; color: var(--text-main);}
+        .text-input:focus { border-color: var(--primary); background: #fff; }
+        .btn-next { width: 100%; padding: 18px; background: var(--primary-gradient); color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 24px rgba(229, 125, 92, 0.3); margin-top: auto;}
+
+        /* ================= 阶段 4：全新深度结果报告页 ================= */
+        #view-result { background: #EAE6E1; padding: 0; } 
+        .result-scroll-container { width: 100%; height: 100%; overflow-y: auto; padding: 20px 20px 100px; -webkit-overflow-scrolling: touch; }
+
+        /* 1. 游戏化 ID 身份卡 (已去掉 Confidential) */
+        .id-card { 
+            background: linear-gradient(135deg, #FFFFFF, #FFF3EB); border-radius: 24px; padding: 30px 20px; text-align: center;
+            box-shadow: 0 16px 32px rgba(229, 125, 92, 0.12); position: relative; overflow: hidden; border: 2px solid #fff; margin-bottom: 20px;
+        }
+        .id-card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(229,125,92,0.15) 0%, transparent 70%); pointer-events: none;}
+        .id-code { font-size: 68px; font-weight: 900; color: var(--primary); line-height: 1; margin: 10px 0 10px; letter-spacing: -2px; text-shadow: 2px 4px 0px rgba(229,125,92,0.15); font-family: Impact, sans-serif;}
+        .id-prefix { font-size: 15px; color: var(--text-sub); font-weight: 800; margin-bottom: 6px;}
+        .id-title { font-size: 26px; font-weight: 900; color: var(--text-main); line-height: 1.3;}
+
+        /* 2. 🔥 全新融合的社交认同雷达模块 */
+        .social-radar-box {
+            background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 20px; 
+            box-shadow: 0 4px 16px rgba(90, 69, 60, 0.04); display: flex; align-items: center; justify-content: space-between;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .social-radar-left { display: flex; flex-direction: column; gap: 6px;}
+        .social-radar-right { text-align: right; }
+        .rarity-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 14px; color: #fff; text-align: center; margin-bottom: 4px;}
+        .social-text { font-size: 12px; color: var(--text-sub); font-weight: 600;}
+        .social-num { font-size: 24px; font-weight: 900; color: var(--text-main); line-height: 1.1;}
+        .social-num span { font-size: 14px; font-weight: 700;}
+
+        /* 模块通用样式 */
+        .res-section { background: #fff; border-radius: 20px; padding: 24px 20px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(90, 69, 60, 0.04); border: 1px solid rgba(255,255,255,0.8);}
+        .res-sec-title { font-size: 16px; font-weight: 800; color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center;}
+        .res-sec-title span { margin-right: 8px; font-size: 20px;}
+
+        /* 3. 🔥 强化的动态能量条与解读 */
+        .stat-block { margin-bottom: 16px; }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;}
+        .stat-label { font-size: 15px; font-weight: 800; color: var(--text-main); }
+        .stat-score { font-size: 16px; font-weight: 900; color: var(--primary); }
+        .stat-bar-bg { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 6px;}
+        .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);}
+        .stat-desc { font-size: 13px; color: var(--text-sub); line-height: 1.4;}
+
+        /* 4. 文本与雷区 */
+        .res-desc-text { font-size: 15px; color: var(--text-main); line-height: 1.6; font-weight: 500;}
+        .kryptonite-box { background: #FFF4F4; border: 1px dashed #FFB8B8; padding: 16px; border-radius: 12px; margin-top: 20px; display: flex; align-items: flex-start; gap: 10px;}
+        .kryptonite-box p { font-size: 14px; color: #D9534F; margin: 0; line-height: 1.6;}
+
+        /* 5. 标签群 (专业 & 职业) */
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;}
+        .major-tag { background: #FDF3ED; color: var(--primary); padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 700;}
+        .career-tag { background: var(--bg-color); color: var(--text-main); padding: 8px 14px; border-radius: 12px; font-size: 13px; font-weight: 700; border: 1px solid var(--border-color);}
+        .pool-subtitle { font-size: 13px; color: var(--text-sub); font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+
+        /* 6. 🔥 强化的横向大牛画廊 */
+        .gallery-wrapper { margin: 0 -20px; padding: 0 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: 12px; scroll-snap-type: x mandatory;}
+        .gallery-wrapper::-webkit-scrollbar { display: none; }
+        .mentor-card { min-width: 260px; max-width: 280px; background: var(--bg-color); border-radius: 16px; padding: 16px; scroll-snap-align: start; border: 1px solid var(--border-color); white-space: normal;}
+        .mentor-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px;}
+        .mentor-icon { font-size: 28px; background: #fff; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-shrink: 0;}
+        .mentor-name { font-size: 16px; font-weight: 800; color: var(--text-main);}
+        .mentor-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5;}
+
+        /* 底部悬浮操作区 */
+        .fixed-bottom-bar { position: absolute; bottom: 0; left: 0; width: 100%; padding: 16px 20px; background: linear-gradient(to top, #EAE6E1 80%, rgba(234,230,225,0)); display: flex; gap: 12px; z-index: 10;}
+        .btn-primary-half { flex: 2; padding: 16px 0; background: var(--primary-gradient); color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; box-shadow: 0 8px 20px rgba(229,125,92,0.3); text-align: center; cursor: pointer; transition: transform 0.1s;}
+        .btn-primary-half:active { transform: scale(0.98); }
+        .btn-outline-half { flex: 1; padding: 16px 0; background: #fff; color: var(--primary); border: 2px solid var(--primary); border-radius: 16px; font-size: 16px; font-weight: 800; text-align: center; cursor: pointer; transition: transform 0.1s;}
+        .btn-outline-half:active { transform: scale(0.98); background: var(--primary-light);}
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <div class="view-container active" id="view-swipe">
+        <div class="header">
+            <h2>极速直觉探测</h2>
+            <div class="progress-container"><div class="progress-bar" id="pb-swipe"></div></div>
+            <div class="counter" id="count-swipe">0 / 15</div>
+        </div>
+        
+        <div class="card-stack" id="cardStack">
+            <div class="swipe-guide" id="swipeGuide">
+                <div class="swipe-guide-text guide-l">👈 左滑选A</div>
+                <div class="swipe-guide-text guide-r">右滑选B 👉</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="transition-screen" id="view-transition">
+        <div class="trans-icon">🧬</div>
+        <div class="trans-title">直觉特征捕获完毕</div>
+        <div class="trans-desc">系统检测到你的核心基因为：</div>
+        <div class="trans-highlight" id="transPrimaryTrait">--</div>
+        <div class="trans-desc" style="margin-top: 40px; font-size: 14px;">
+            正在进入极限情境压力测试<span class="loading-dots"></span>
+        </div>
+    </div>
+
+    <div class="view-container" id="view-qa">
+        <div class="header">
+            <h2 id="qa-module-title">极限情境测试</h2>
+            <div class="progress-container"><div class="progress-bar" id="pb-qa"></div></div>
+            <div class="counter" id="count-qa">0 / 8</div>
+        </div>
+        <div class="q-container" id="q-container"></div>
+    </div>
+
+    <div class="view-container" id="view-result">
+        <div class="result-scroll-container">
+            
+            <div class="id-card">
+                <div class="id-code" id="resCode">--</div>
+                <div class="id-prefix" id="resPrefix">--</div>
+                <div class="id-title" id="resTitle">--</div>
+            </div>
+
+            <div class="social-radar-box">
+                <div class="social-radar-left">
+                    <div class="rarity-badge" id="resRarity">SSR 级稀有度</div>
+                    <div class="social-text">全网仅有 <span style="font-weight: 800; color: var(--text-main);" id="resPercent">--%</span> 的人共享此天赋</div>
+                </div>
+                <div class="social-radar-right">
+                    <div class="social-num" id="resCount">--</div>
+                    <div class="social-text">名同类已觉醒</div>
+                </div>
+            </div>
+
+            <div class="res-section">
+                <div class="res-sec-title"><span>📊</span> 核心天赋驱动面板</div>
+                <div id="resScoreBars"></div>
+            </div>
+
+            <div class="res-section">
+                <div class="res-sec-title"><span>🔥</span> 深度解析与致命雷区</div>
+                <div class="res-desc-text" id="resDesc">--</div>
+                <div class="kryptonite-box">
+                    <div style="font-size: 20px;">💥</div>
+                    <div>
+                        <strong style="color: #D9534F; display: block; margin-bottom: 4px;">致命雷区 (Kryptonite)：</strong>
+                        <p id="resWeakness">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="res-section">
+                <div class="res-sec-title"><span>🎯</span> 灵魂共振申请路线</div>
+                <div class="pool-subtitle">TOP 5 推荐申请专业</div>
+                <div class="tag-cloud" id="resMajorsTags"></div>
+                
+                <div class="pool-subtitle" style="margin-top: 16px;">未来高光职业预测</div>
+                <div class="tag-cloud" id="resCareersTags"></div>
+            </div>
+
+            <div class="res-section" style="background: transparent; box-shadow: none; padding: 0; border: none;">
+                <div class="res-sec-title" style="padding: 0 5px;"><span>🤝</span> 命运绑定的超级校友</div>
+                <div class="gallery-wrapper" id="resModelsGrid"></div>
+            </div>
+            
+        </div>
+
+        <div class="fixed-bottom-bar">
+            <button class="btn-primary-half" onclick="alert('已衔接至 Riki 首页【建立成长档案】！')">领取专属升学规划</button>
+            <button class="btn-outline-half" onclick="shareTest()">分享 🚀</button>
+        </div>
+    </div>
+
+</div>
+
+    <script>
+        let scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+        let essayAnswers = []; 
+
+        // 🔥 升级：增加了每项能力的具体解读（用于进度条下方显示）
+        const traitDict = {
+            "R": { name: "实用型", shortDesc: "动手能力与物理直觉拉满，是绝对的实干派。", desc: "绝对硬核。不迷信理论，只相信双手能造出来的东西，带有极客和工匠精神。" },
+            "I": { name: "研究型", shortDesc: "底层逻辑与深度推演能力极强，团队中的智脑。", desc: "真理猎手。对世界的底层运转逻辑充满病态的着迷，喜欢用数据和代码解构复杂问题。" },
+            "A": { name: "艺术型", shortDesc: "非凡的审美与感性洞察，天生的创作者。", desc: "灵感怪物。对千篇一律的规则过敏，拥有敏锐的审美直觉，擅长把抽象情绪具象化。" },
+            "S": { name: "社会型", shortDesc: "极强的同理心与社会连接力，团队粘合剂。", desc: "共情大师。天生的人类观察者，能瞬间捕捉他人的情绪波段，在团队中拥有极强的治愈力量。" },
+            "E": { name: "企业型", shortDesc: "极佳的资源调配能力与破局野心，天生Leader。", desc: "破局野心家。渴望掌控全局和调配资源，有着极其敏锐的商业嗅觉和不可思议的说服力。" },
+            "C": { name: "常规型", shortDesc: "无可挑剔的秩序构建与绝对严谨，系统的基石。", desc: "秩序掌控者。极度自律且缜密，能在混沌和海量数据中建立起极其完美的系统和规则。" }
+        };
+
+        // 🔥 升级：大幅扩写了文案，增设5个专业、增设职业池、扩写大牛介绍
+        const matrixDB = {
+            "IE": { 
+                title: "降维打击·硅谷钢铁侠", 
+                desc: "你能一眼看穿复杂事物背后的底层逻辑，同时拥有野兽般敏锐的商业嗅觉。你不甘心只在实验室里做一枚安静敲代码的螺丝钉，你的终极目标是将前沿技术转化为估值百亿的商业壁垒，用科技直接改变世界的运转方式。", 
+                weakness: "极度厌恶愚蠢且低效的流程，容易对动作慢、讲废话的队友失去耐心。在缺乏目标感和成长空间的“养老型”团队中会感到极度窒息。", 
+                majors: ["商业分析 (BA)", "数据科学 (DS)", "金融工程/FinTech", "经济学", "信息系统管理"], 
+                careers: ["科技创业者 (Founder)", "AI产品经理", "风险投资人 (VC)", "顶级战略咨询顾问"],
+                models: [ 
+                    { icon: "💡", name: "Sam Altman", desc: "OpenAI掌门人。用极致的底层 AI 技术撬动全球顶级资本，重塑人类生产力范式。" }, 
+                    { icon: "🚀", name: "Elon Musk", desc: "特斯拉/SpaceX创始人。从物理学第一性原理出发，推演并构建了宏大的跨界商业版图。" }, 
+                    { icon: "💻", name: "Bill Gates", desc: "初代极客霸主。精准把握技术与市场的临界点，将冰冷代码转化为统治世界的商业工具。" } 
+                ] 
+            },
+            "IR": { 
+                title: "机械飞升·硬核布道师", 
+                desc: "极具死磕精神，擅长在极其复杂的系统中寻找最优解，将抽象理论变成可运行的实体。你有着工程师的浪漫，相信数据、代码和精密机械，胜过相信人类不稳定的直觉。", 
+                weakness: "容易陷入过度的“技术原教旨主义”，偶尔会忽略人际情绪和沟通成本，最讨厌“只会做PPT画大饼”的领导。", 
+                majors: ["计算机科学 (CS)", "电子与电气工程", "物理学", "机械/航空航天", "材料科学"], 
+                careers: ["底层算法工程师", "机器人架构师", "硬件研发专家", "前沿科研学者"],
+                models: [ 
+                    { icon: "🖥️", name: "黄仁勋", desc: "NVIDIA创始人。数十年如一日深耕底层算力芯片，最终一手推动全球 AI 算力大爆发。" }, 
+                    { icon: "🎬", name: "詹姆斯·卡梅隆", desc: "电影界技术狂人。为了拍电影自己研发硬核深海相机和3D技术，用技术推动艺术边界。" }, 
+                    { icon: "🐧", name: "Linus Torvalds", desc: "Linux之父。开源世界的造物主，用极其严密优美的底层代码支撑起整个现代互联网。" } 
+                ] 
+            },
+            "IA": { 
+                title: "赛博美学·产品塑形师", 
+                desc: "你是罕见的兼具科学家严谨与艺术家感性的怪物。你不仅要求东西“能用、有效”，更要求它拥有无与伦比的极致美学和交互体验。你致力于给冰冷的技术赋予灵魂和温度。", 
+                weakness: "完美主义晚期患者。无法忍受任何粗制滥造的排版、没有美感的交互设计和“差不多就行了”的妥协态度。", 
+                majors: ["人机交互 (HCI)", "工业设计", "建筑学", "数字媒体技术", "认知科学"], 
+                careers: ["顶级产品设计师", "UI/UX 专家", "建筑架构师", "创意技术总监 (CTO)"],
+                models: [ 
+                    { icon: "📱", name: "史蒂夫·乔布斯", desc: "科技与人文十字路口的绝对王者。偏执地要求产品内部看不见的电路板也要极具美感。" }, 
+                    { icon: "🎨", name: "Jony Ive", desc: "前苹果首席设计师。精通严谨的材料科学，并以此为基础实现了震撼全球的极简工业美学。" }, 
+                    { icon: "⏳", name: "克里斯托弗·诺兰", desc: "好莱坞大导演。用极其严密的物理和时间逻辑，为观众构建了前所未有的视听迷宫。" } 
+                ] 
+            },
+            "AS": { 
+                title: "灵魂震荡·治愈传播者", 
+                desc: "你拥有恐怖的同理心和极强的表达欲。你擅长像雷达一样精准捕捉社会的隐秘痛点和边缘群体的情绪，并能用极具感染力的文字、影像或演讲去深深影响大众。", 
+                weakness: "容易产生情绪内耗。在充满冰冷数字、严苛KPI和勾心斗角的残酷商业环境中，你的才华会迅速枯萎。", 
+                majors: ["传媒与传播学", "心理学", "社会学", "公共关系 (PR)", "数字营销"], 
+                careers: ["独立内容创作者", "知名心理咨询师", "公关/品牌总监", "纪录片导演"],
+                models: [ 
+                    { icon: "🎙️", name: "Brené Brown", desc: "顶尖研究学者。将枯燥的心理研究转化为极其治愈的TED演讲，让数百万人直面脆弱。" }, 
+                    { icon: "⚖️", name: "罗翔", desc: "法学教授。用幽默且极具悲悯心和同理心的表达，在中国完成了不可思议的大众法律启蒙。" }, 
+                    { icon: "🎸", name: "Taylor Swift", desc: "时代级音乐人。敏锐捕捉个体细腻情感，用文字和音乐引发跨越国界、跨越代际的惊人共鸣。" } 
+                ] 
+            },
+            "EC": { 
+                title: "绝对秩序·理性资本家", 
+                desc: "你对规则、数字和风险有着天生的野兽级敏感度。在极其庞大、混乱的商业机器中，你能充当绝对冷静的中枢大脑，通过极度严谨的模型和纪律来控制庞大的资本和团队。", 
+                weakness: "对“毫无规矩、随性散漫、全凭感觉做事”的团队极度反感。掌控欲极强，面对无法量化的模糊地带容易焦虑。", 
+                majors: ["金融学 (Finance)", "会计学", "精算与风险管理", "供应链管理", "工商管理"], 
+                careers: ["高级精算师", "CFO/财务总监", "量化投资经理", "全球供应链大拿"],
+                models: [ 
+                    { icon: "📈", name: "Warren Buffett", desc: "奥马哈先知。以极度自律的财务分析原则和铁一般的投资纪律，稳稳掌控着庞大的资本帝国。" }, 
+                    { icon: "⚙️", name: "蒂姆·库克", desc: "运营之神。能在极其复杂、充满变量的全球供应链体系中建立起如同钟表般完美的运转秩序。" }, 
+                    { icon: "🧠", name: "瑞·达利欧", desc: "桥水基金创始人。推崇绝对理性的《原则》，用机器般的算法逻辑管理数千亿美元的资产。" } 
+                ] 
+            },
+            "SI": { 
+                title: "人类信标·实证拯救者", 
+                desc: "你是一个罕见的矛盾体：心中怀有拯救他人的圣母般理想主义，但手中却掌握着通过科学实验、医学研究来解决实际问题的冷酷行动力。你用实证去捍卫人类福祉。", 
+                weakness: "容易承担过多的“拯救者包袱”。对那些毫无社会价值、纯粹为了“割韭菜搞钱”的工作感到极度虚无和排斥。", 
+                majors: ["生物医学 (Pre-Med)", "公共卫生", "临床心理学", "药学", "神经科学"], 
+                careers: ["无国界医生", "尖端医药研发", "公共卫生政策制定者", "临床科研主任"],
+                models: [ 
+                    { icon: "⚕️", name: "Paul Farmer", desc: "医学人类学家。扎根海地等极端贫困地区，用严谨的医学研究与传染病系统推动全球医疗公平。" }, 
+                    { icon: "🌿", name: "屠呦呦", desc: "诺贝尔奖得主。在成千上万次极其枯燥、严谨的科学实验中，最终提取出拯救了千万人的青蒿素。" }, 
+                    { icon: "🩺", name: "张文宏", desc: "感染科主任。在公共卫生危机中，用最扎实、不容置疑的临床科研数据来指导并安抚社会大众。" } 
+                ] 
+            }
+        };
+
+        const swipeQs = [
+            { scene: "加入前沿无人机项目，你倾向于：", optionA: "亲自上阵修复坠毁的硬件", optionB: "在电脑前探究防撞算法逻辑", typeA: "R", typeB: "I" },
+            { scene: "拥有专属工作室，你更愿意：", optionA: "在木工坊里亲手打造实木家具", optionB: "在软件里设计赛博朋克视觉图", typeA: "R", typeB: "A" },
+            { scene: "无聊的周末，你倾向的打发时间方式：", optionA: "独自在车间里组装精密机械零件", optionB: "在社区耐心辅导孤独症儿童画画", typeA: "R", typeB: "S" },
+            { scene: "参与荒野求生真人秀，你更愿意：", optionA: "亲自在野外搭建功能性营地设备", optionB: "站在台上向投资人推销营地企划", typeA: "R", typeB: "E" },
+            { scene: "如果必须处理极其耗时的麻烦事：", optionA: "动手拆解并清理一台复杂的发动机", optionB: "用 Excel 严格核对全年的繁杂流水", typeA: "R", typeB: "C" },
+            { scene: "探索宇宙的终极奥秘，你更倾向于：", optionA: "深度探究量子物理的底层运作规律", optionB: "构思并写下关于平行宇宙的科幻小说", typeA: "I", typeB: "A" },
+            { scene: "在顶尖的肿瘤医院实习，你倾向于：", optionA: "闭关在实验室寻找癌症的靶向药机制", optionB: "在病房握着癌症患者的手进行心理疏导", typeA: "I", typeB: "S" },
+            { scene: "拿到深度的行业报告，你下一步是：", optionA: "沉浸式分析行业过去十年的数据周期", optionB: "立刻跳出数据，制定强势的行业并购计划", typeA: "I", typeB: "E" },
+            { scene: "接手庞大且混乱的软件系统，你愿意：", optionA: "钻研如何用全新的代码逻辑实现复杂功能", optionB: "给现有的一万行老代码写极其规范的注释", typeA: "I", typeB: "C" },
+            { scene: "呼吁大众关爱流浪动物，你更倾向于：", optionA: "独自把自己关在画室里完成一幅油画", optionB: "组织一场盛大的公益艺术展为它们筹款", typeA: "A", typeB: "S" },
+            { scene: "作为初创公司核心骨干，你愿意负责：", optionA: "沉浸式死磕 UI 交互体验，追求极致", optionB: "拿着产品去和渠道商进行千万级别的谈判", typeA: "A", typeB: "E" },
+            { scene: "面对截然不同的两项任务，你选择：", optionA: "随性创作没有规则限制的先锋电子乐", optionB: "严格按出版要求逐字校对 500 页教材", typeA: "A", typeB: "C" },
+            { scene: "作为Leader面对利润下滑危机，你会：", optionA: "耐心倾听团队成员的情绪，化解人际冲突", optionB: "极其强硬地裁掉不合格员工，保证核心利润", typeA: "S", typeB: "E" },
+            { scene: "负责大学迎新工作，你更愿意：", optionA: "给新生做耐心、细致的一对一入学指导", optionB: "收集、整理并录入全校 3000 名新生的档案", typeA: "S", typeB: "C" },
+            { scene: "作为跨国公司高管，你更愿意去做的决策：", optionA: "承担巨大风险，去开拓完全未知的海外新市场", optionB: "留在总部，制定完善极其严密的财务审计制度", typeA: "E", typeB: "C" }
+        ].sort(() => Math.random() - 0.5);
+
+        const scenarioQs = [
+            { title: "1. 【资源战】学校突然批给你 10 万块钱起盘新项目，你拿到钱第一反应是？", options: [ { label: "A", text: "算账建模：拉 Excel 算清预算分配和风控逻辑。", val: "C" }, { label: "B", text: "找人组局：脑子里浮现几个牛人，画大饼忽悠进团队。", val: "E" }, { label: "C", text: "死磕痛点：研究校园底层逻辑漏洞，寻找最优解。", val: "I" }, { label: "D", text: "搞点炫的：项目的视觉呈现和概念包装必须极具颠覆性。", val: "A" }, { label: "E", text: "造福弱势：成立互助基金帮助有具体困难的同学。", val: "S" }, { label: "F", text: "买硬装备：立马采购高配置服务器、3D打印设备。", val: "R" } ] },
+            { title: "2. 【生存局】如果在末日废土世界加入幸存者营地，你能靠什么活到大结局？", options: [ { label: "A", text: "快速摸清并修理废弃电站、改装越野车和制作武器。", val: "R" }, { label: "B", text: "分析毒气蔓延的数据规律，推演出最安全的迁徙路线。", val: "I" }, { label: "C", text: "资源极度匮乏时，画出营地壁画、用音乐安抚大家情绪。", val: "A" }, { label: "D", text: "敏锐察觉谁快要崩溃，及时做心理干预，团结大家。", val: "S" }, { label: "E", text: "在营地暴乱时建立新秩序，带领大家抢夺其他地盘资源。", val: "E" }, { label: "F", text: "把仅存的食物、弹药进行最严密的入库登记和配给管理。", val: "C" } ] },
+            { title: "3. 【数字症】抛开社交软件，以下哪类应用或内容才是你真正的“时间黑洞”？", options: [ { label: "A", text: "效率与记账 (Notion)：看着所有事物井井有条极度舒适。", val: "C" }, { label: "B", text: "硬核科普 (维基百科)：想搞懂黑洞原理或晦涩的代码理论。", val: "I" }, { label: "C", text: "闲鱼与金融 (股票基金)：享受低买高卖、研究商业套利。", val: "E" }, { label: "D", text: "创作与视觉 (Pinterest/剪映)：对排版、转场毫无抵抗力。", val: "A" }, { label: "E", text: "互助问答 (知乎情感区)：看别人的烦恼并写长文开导网友。", val: "S" }, { label: "F", text: "硬核评测 (数码/汽车拆解)：看大神把复杂机械大卸八块。", val: "R" } ] },
+            { title: "4. 【修罗场】你最怕遇到哪种“小组作业灾难”？", options: [ { label: "A", text: "逻辑稀碎：瞎出主意，没人去探究问题底层的科学原理。", val: "I" }, { label: "B", text: "审美极差：最后的 PPT 模板丑到令人发指，排版杂乱。", val: "A" }, { label: "C", text: "争权夺利：几个人为了抢队长头衔暗中较劲，影响进度。", val: "E" }, { label: "D", text: "毫无规矩：大家都不遵守 DDL，群里消息乱糟糟。", val: "C" }, { label: "E", text: "情绪内耗：队内有人玻璃心，整个团队氛围压抑得想逃。", val: "S" }, { label: "F", text: "只说不练：满嘴大词，但到了真要搭模型跑数据时全缩了。", val: "R" } ] },
+            { title: "5. 【巅峰对决】如果你和马斯克在电梯独处3分钟，你最想探讨什么？", options: [ { label: "A", text: "SpaceX 火箭推进器的最新钛合金材料与物理锻造工艺。", val: "R" }, { label: "B", text: "脑机接口背后的神经学代码模型与脑电波算法。", val: "I" }, { label: "C", text: "火星殖民地的美学建筑风格与未来人类的视觉文明呈现。", val: "A" }, { label: "D", text: "AI 爆发后，如何通过全民基本收入保障底层人类尊严。", val: "S" }, { label: "E", text: "如果强行收购某巨头失败，下一步的资本杠杆与对冲布局。", val: "E" }, { label: "F", text: "他旗下几家体量庞大的公司，如何在混乱中维持合规审计。", val: "C" } ] }
+        ];
+
+        const essayQs = [
+            { title: "【空白支票】", desc: "顶级风投开出空白支票让你未来10年死磕一个问题，你想攻克什么项目？", tags: ["💡 开发平价清洁能源", "🏥 攻克罕见病靶向药", "🤖 研发通用人工智能", "🌍 重塑乡村教育系统"] },
+            { title: "【绝对底线】", desc: "一份工作如果给你极高薪水，但要求你每天必须面对 _____________，你绝对会辞职。", tags: ["🚫 无意义的马屁与内卷", "🚫 违背道德底线的指令", "🚫 极其死板的官僚主义", "🚫 毫无审美的一坨垃圾"] },
+            { title: "【高光判词】", desc: "想象你30岁登顶行业大会，写下主持人向全场介绍你的1句“高光介绍词”。", tags: ["🚀 他创立了改变行业的...", "🎨 她的设计颠覆了大众的...", "⚖️ 他/她让百万人受益于..."] }
+        ];
+
+        const qaTotal = scenarioQs.length + essayQs.length;
+        let currentQaIndex = 0, swipeIndex = 0;
+        let isDragging = false, startX = 0, currentX = 0, topCard = null;
+
+        const stack = document.getElementById('cardStack');
+        function initSwipe() {
+            for (let i = swipeQs.length - 1; i >= 0; i--) {
+                const q = swipeQs[i]; const card = document.createElement('div'); card.className = 'card';
+                card.innerHTML = `<div class="card-scene-wrapper"><div class="card-scene">${q.scene}</div></div><div class="badge left">选 A</div><div class="badge right">选 B</div><div class="option-box"><div class="option-label">Option A</div><div class="option-text">${q.optionA}</div></div><div class="divider"></div><div class="option-box"><div class="option-label">Option B</div><div class="option-text">${q.optionB}</div></div>`;
+                stack.appendChild(card);
+            }
+            updateSwipeVisuals(); bindTopCard(); updateSwipeProgress();
+        }
+        
+        function updateSwipeVisuals() { Array.from(stack.children).reverse().forEach((card, i) => { if(i > 2 || !card.classList.contains('card')) return; card.style.opacity = 1 - (i * 0.1); card.style.transform = `translateY(${i * 12}px) scale(${1 - i * 0.05})`; card.style.zIndex = swipeQs.length - i; }); }
+        function updateSwipeProgress() { document.getElementById('pb-swipe').style.width = `${(swipeIndex / swipeQs.length) * 100}%`; document.getElementById('count-swipe').innerText = `${swipeIndex} / ${swipeQs.length}`; }
+        
+        function bindTopCard() {
+            if (swipeIndex >= swipeQs.length) { showTransition(); return; }
+            topCard = stack.lastElementChild;
+            if (!topCard.classList.contains('card')) return; 
+
+            topCard.addEventListener('pointerdown', e => { 
+                isDragging = true; startX = e.clientX; topCard.classList.add('dragging'); 
+                if(swipeIndex >= 3) {
+                    const guide = document.getElementById('swipeGuide');
+                    if (guide) guide.style.display = 'none'; 
+                }
+                document.addEventListener('pointermove', handleMove); document.addEventListener('pointerup', handleEnd); 
+            });
+        }
+
+        function handleMove(e) {
+            if (!isDragging) return; currentX = e.clientX - startX; topCard.style.transform = `translate(${currentX}px, 0) rotate(${currentX * 0.08}deg)`;
+            const opacity = Math.min(Math.abs(currentX) / 100, 1);
+            if (currentX < 0) { topCard.querySelector('.badge.left').style.opacity = opacity; topCard.querySelector('.badge.right').style.opacity = 0; } else { topCard.querySelector('.badge.right').style.opacity = opacity; topCard.querySelector('.badge.left').style.opacity = 0; }
+        }
+        function handleEnd() {
+            if (!isDragging) return; isDragging = false; topCard.classList.remove('dragging');
+            document.removeEventListener('pointermove', handleMove); document.removeEventListener('pointerup', handleEnd);
+            if (currentX < -100) swipeOut(-1, swipeQs[swipeIndex].typeA); else if (currentX > 100) swipeOut(1, swipeQs[swipeIndex].typeB);
+            else { topCard.style.transform = `translateY(0) scale(1)`; topCard.querySelector('.badge.left').style.opacity = 0; topCard.querySelector('.badge.right').style.opacity = 0; } currentX = 0;
+        }
+        function swipeOut(dir, type) {
+            scores[type] += 1; swipeIndex++; updateSwipeProgress();
+            topCard.style.transform = `translate(${dir * window.innerWidth}px, 100px) rotate(${dir * 45}deg)`; topCard.style.opacity = 0;
+            const oldCard = topCard; setTimeout(() => { oldCard.remove(); updateSwipeVisuals(); bindTopCard(); }, 300);
+        }
+
+        function showTransition() {
+            document.getElementById('view-swipe').classList.remove('active');
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            const pTrait = sorted[0][0]; 
+            document.getElementById('transPrimaryTrait').innerText = `${traitDict[pTrait].name} (${pTrait})`;
+            
+            const transView = document.getElementById('view-transition');
+            transView.classList.add('active');
+            
+            setTimeout(() => {
+                transView.classList.remove('active');
+                renderQaPage();
+                document.getElementById('view-qa').classList.add('active');
+            }, 3000);
+        }
+
+        function renderQaPage() {
+            const container = document.getElementById('q-container'); container.innerHTML = '';
+            document.getElementById('pb-qa').style.width = `${(currentQaIndex / qaTotal) * 100}%`; document.getElementById('count-qa').innerText = `${currentQaIndex} / ${qaTotal}`;
+            
+            if (currentQaIndex < scenarioQs.length) {
+                document.getElementById('qa-module-title').innerText = "阶段二：极限情境压测"; const q = scenarioQs[currentQaIndex];
+                let html = `<div class="q-title">${q.title}</div><div class="opt-list">`;
+                q.options.forEach(opt => { html += `<div class="opt-item" onclick="handleOptionSelect(this, '${opt.val}')"><div class="opt-letter">${opt.label}</div><div>${opt.text}</div></div>`; });
+                html += `</div>`; container.innerHTML = html;
+            } else if (currentQaIndex < qaTotal) {
+                document.getElementById('qa-module-title').innerText = "阶段三：灵魂拷问"; const q = essayQs[currentQaIndex - scenarioQs.length];
+                let tagsHtml = `<div class="inspiration-box">`;
+                q.tags.forEach(tag => { tagsHtml += `<div class="insp-pill" onclick="fillEssay('${tag.replace(/[💡🏥🤖🌍🚫🚀🎨⚖️]/g,'').trim()}')">${tag}</div>`; });
+                tagsHtml += `</div>`;
+                container.innerHTML = `<div class="q-title">${q.title}</div><div class="q-desc">${q.desc}</div>${tagsHtml}<textarea class="text-input" id="essayInput" placeholder="点击上方标签获取灵感，或直接写下你的答案..."></textarea><button class="btn-next" onclick="handleEssaySubmit()">确认提交</button>`;
+            } else { generateReport(); switchView('view-qa', 'view-result'); }
+        }
+
+        function fillEssay(text) {
+            const input = document.getElementById('essayInput');
+            input.value = text;
+            input.focus();
+        }
+
+        function handleOptionSelect(el, val) {
+            document.querySelectorAll('.opt-item').forEach(item => item.style.pointerEvents = 'none');
+            el.classList.add('selected'); scores[val] += 3;
+            setTimeout(() => { const container = document.getElementById('q-container'); container.classList.add('fade-out'); setTimeout(() => { currentQaIndex++; container.classList.remove('fade-out'); renderQaPage(); }, 300); }, 400);
+        }
+
+        function handleEssaySubmit() {
+            const val = document.getElementById('essayInput').value.trim(); if(!val) { alert("哪怕只写一个词，这也是属于你真实的缩影。"); return; } essayAnswers.push(val);
+            const container = document.getElementById('q-container'); container.classList.add('fade-out'); setTimeout(() => { currentQaIndex++; container.classList.remove('fade-out'); renderQaPage(); }, 300);
+        }
+
+        function generateSocialStats(code) {
+            const percentageMap = { "IE": "4.2", "IR": "3.8", "IA": "2.1", "AS": "8.5", "EC": "6.7", "SI": "5.4" };
+            let percent = percentageMap[code] || (Math.random() * (9 - 1) + 1).toFixed(1);
+            let countStr = (Math.floor(Math.random() * 80) + 10) + "," + (Math.floor(Math.random() * 899) + 100);
+            return { percent, countStr };
+        }
+
+        function generateReport() {
+            const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            const primary = sorted[0][0]; const pScore = sorted[0][1];
+            const secondary = sorted[1][0]; const code1 = primary + secondary; const code2 = secondary + primary;
+            
+            let match = matrixDB[code1] || matrixDB[code2] || {
+                title: "绝对旷野·多维探索者", desc: "你不拘泥单一标签，擅长在不同领域建立奇妙连接，拥有深不可测的跨界潜力。", weakness: "讨厌被贴上单一的标签，无法忍受在流水线上做重复的螺丝钉工作。", majors: ["跨学科专业", "文理学院(Liberal Arts)", "创新设计", "哲学", "认知科学"], careers: ["连续跨界创业者", "前沿交叉学科研究员", "独立艺术指导", "科技哲学作家"],
+                models: [ { icon: "🌍", name: "马斯克", desc: "打破学科边界，将物理、工程和商业融会贯通的狂人。" }, { icon: "💡", name: "达芬奇", desc: "左手画蒙娜丽莎，右手研究解剖学与机械飞行器的旷世全才。" }, { icon: "🎨", name: "Virgil Abloh", desc: "学建筑出身，却用严谨的工业设计逻辑彻底颠覆了时尚圈。" } ]
+            };
+
+            const prefixes = ["极其罕见的", "刚觉醒的", "天生的", "极度执着的", "不可定义的"];
+            document.getElementById('resPrefix').innerText = `${prefixes[Math.floor(Math.random() * prefixes.length)]} · ${traitDict[primary].name}`;
+            document.getElementById('resTitle').innerText = match.title;
+            document.getElementById('resCode').innerText = `${primary}${secondary}`;
+            
+            // 动态生成 SSR 与 稀有度颜色
+            let rarity = "SR 级稀有度", rarityColor = "#F59E0B";
+            if (pScore >= 12) { rarity = "UR 级极度稀有"; rarityColor = "#E11D48"; } 
+            else if (Math.abs(pScore - sorted[1][1]) <= 1) { rarity = "SSR 级完美均衡"; rarityColor = "#8B5CF6"; }
+            
+            document.getElementById('resRarity').innerText = rarity;
+            document.getElementById('resRarity').style.background = rarityColor;
+
+            // 渲染社交统计数据
+            const stats = generateSocialStats(code1);
+            document.getElementById('resPercent').innerText = stats.percent + "%";
+            document.getElementById('resCount').innerText = stats.countStr;
+
+            // 🔥 渲染能量条与附带解读
+            const maxScore = Math.max(pScore, 10); 
+            let barsHtml = '';
+            for(let i=0; i<3; i++) {
+                let t = sorted[i][0]; let s = sorted[i][1];
+                let pct = Math.min((s / maxScore) * 100, 100);
+                let color = i === 0 ? "var(--primary)" : (i === 1 ? "#F4A261" : "#E2C4A8");
+                barsHtml += `
+                    <div class="stat-block">
+                        <div class="stat-row">
+                            <div class="stat-label">${traitDict[t].name} (${t})</div>
+                            <div class="stat-score">${s}</div>
+                        </div>
+                        <div class="stat-bar-bg"><div class="stat-bar-fill" style="width: ${pct}%; background: ${color};"></div></div>
+                        <div class="stat-desc">${traitDict[t].shortDesc}</div>
+                    </div>
+                `;
+            }
+            document.getElementById('resScoreBars').innerHTML = barsHtml;
+
+            // 渲染正文雷区
+            document.getElementById('resDesc').innerText = match.desc;
+            document.getElementById('resWeakness').innerText = match.weakness;
+            
+            // 渲染双标签云 (专业 + 职业)
+            let majorTagsHtml = '';
+            match.majors.forEach(mj => { majorTagsHtml += `<div class="major-tag">${mj}</div>`; });
+            document.getElementById('resMajorsTags').innerHTML = majorTagsHtml;
+
+            let careerTagsHtml = '';
+            match.careers.forEach(cr => { careerTagsHtml += `<div class="career-tag">${cr}</div>`; });
+            document.getElementById('resCareersTags').innerHTML = careerTagsHtml;
+
+            // 渲染画廊大牛
+            let modelsHtml = "";
+            match.models.forEach(m => { 
+                modelsHtml += `
+                    <div class="mentor-card">
+                        <div class="mentor-header">
+                            <div class="mentor-icon">${m.icon}</div>
+                            <div class="mentor-name">${m.name}</div>
+                        </div>
+                        <div class="mentor-desc">${m.desc}</div>
+                    </div>
+                `; 
+            });
+            document.getElementById('resModelsGrid').innerHTML = modelsHtml;
+        }
+
+        function shareTest() {
+            const shareData = { title: 'Riki 升学天赋测评', text: '我刚测出了专属升学基因，你也来测测看你的隐藏天赋是什么吧！', url: window.location.href };
+            if (navigator.share) { navigator.share(shareData).catch((error) => console.log('分享取消', error)); } 
+            else { navigator.clipboard.writeText(window.location.href).then(() => { alert('✨ 测评链接已复制，快去发给好朋友吧！'); }).catch(err => { alert('复制失败，请直接复制浏览器顶部链接分享哦。'); }); }
+        }
+
+        function switchView(hideId, showId) { document.getElementById(hideId).classList.remove('active'); setTimeout(() => document.getElementById(showId).classList.add('active'), 50); }
+
+        initSwipe();
+    </script>
+</body>
+</html>
