@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>世界玩法测定 NEO-ID</title>
+    <style>
+        /* ================= Neo-Dark 品牌色盘 ================= */
+        :root {
+            --bg-pure: #000000;       
+            --bg-card: #141414;       
+            --text-main: #FFFFFF;     
+            --text-sub: #888888;      
+            
+            --neon-cyan: #00FFFF;
+            --neon-magenta: #FF00FF;
+            --neon-green: #00FF41;    
+            
+            --primary-gradient: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+            --primary-glow: 0 0 15px rgba(0, 255, 255, 0.7);
+            --magenta-glow: 0 0 15px rgba(255, 0, 255, 0.7);
+            --green-glow: 0 0 15px rgba(0, 255, 65, 0.7);
+            
+            --border-color: #222222;  
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; margin: 0; padding: 0; outline: none; }
+        body { background-color: #050505; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; overflow: hidden; color: var(--text-main); }
+        
+        .app-wrapper { width: 100%; max-width: 480px; height: 100%; background-color: var(--bg-pure); position: relative; overflow: hidden; border: 1px solid #111;}
+        
+        .view-container { display: none; width: 100%; height: 100%; padding: 20px; flex-direction: column; align-items: center; position: absolute; top: 0; left: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        .view-container.active { display: flex; animation: fadeInNeo 0.3s ease-out forwards; }
+        
+        @keyframes fadeInNeo { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+        .fade-out { animation: fadeOutNeo 0.2s ease forwards !important; }
+        @keyframes fadeOutNeo { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.98); } }
+
+        /* ================= 阶段 0：封面页 ================= */
+        #view-intro { background: radial-gradient(circle at 50% 40%, #1a1a1a 0%, #000000 70%); padding: 60px 32px 50px; display: none; flex-direction: column; justify-content: flex-start;}
+        #view-intro.active { display: flex; }
+        
+        .intro-bg-glow { position: absolute; top: 30%; left: -20%; width: 300px; height: 300px; background: var(--neon-magenta); filter: blur(130px); opacity: 0.15; z-index: 0; pointer-events: none; }
+        .intro-bg-glow-2 { position: absolute; bottom: 10%; right: -20%; width: 250px; height: 250px; background: var(--neon-cyan); filter: blur(120px); opacity: 0.15; z-index: 0; pointer-events: none; }
+        
+        .intro-content-wrap { position: relative; z-index: 2; width: 100%; flex: 1; display: flex; flex-direction: column; }
+        .intro-tag { display: inline-block; padding: 6px 14px; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-weight: 900; font-size: 11px; text-transform: uppercase; border-radius: 4px; letter-spacing: 2px; margin-bottom: 36px; align-self: flex-start; text-shadow: var(--primary-glow); box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.2);}
+        .intro-hero { font-size: 38px; font-weight: 900; color: var(--text-main); line-height: 1.25; margin-bottom: 40px; text-align: left; letter-spacing: -1px;}
+        
+        .intro-roles-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 50px; padding-left: 20px; border-left: 2px solid #222; }
+        .intro-roles-list span { font-size: 19px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; }
+        .intro-roles-list span:nth-child(1) { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,65,0.5); }
+        .intro-roles-list span:nth-child(2) { color: var(--neon-cyan); text-shadow: var(--primary-glow); }
+        .intro-roles-list span:nth-child(3) { color: var(--neon-magenta); text-shadow: var(--magenta-glow); }
+        
+        .intro-hook-wrap { position: relative; background: rgba(20,20,20,0.6); border: 1px solid #222; border-radius: 12px; padding: 30px 24px; margin-bottom: 40px;}
+        .intro-hook-wrap::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; box-shadow: inset 0 0 15px rgba(255,255,255,0.03); pointer-events: none;}
+        .hook-content { position: relative; z-index: 2; font-size: 17px; font-weight: 800; color: var(--text-main); line-height: 1.8; letter-spacing: 0.5px; text-align: justify; }
+        .hook-hl { color: var(--neon-cyan); text-shadow: var(--primary-glow); }
+        .hook-hl-main { position: relative; color: var(--neon-magenta); z-index: 1; white-space: nowrap; font-size: 18px; font-weight: 900; text-shadow: var(--magenta-glow);}
+        
+        .intro-bottom-wrap { margin-top: auto; width: 100%; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;}
+        .intro-bottom-text { text-align: center; font-size: 14px; color: var(--text-sub); font-weight: 600; line-height: 1.8; margin-bottom: 28px; padding: 0 10px;}
+        .intro-bottom-text span { color: var(--neon-cyan); font-size: 20px; font-weight: 900; text-shadow: var(--primary-glow); margin: 0 2px;}
+        
+        .btn-intro { width: 100%; background: transparent; color: var(--text-main); border: 2px solid var(--text-main); border-radius: 4px; padding: 20px; font-size: 18px; font-weight: 900; letter-spacing: 3px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; position: relative; overflow: hidden;}
+        .btn-intro:active { background: var(--text-main); color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.5); transform: translateY(-2px);}
+
+        /* 公共进度条与破冰引导 */
+        .header { width: 100%; text-align: center; margin-bottom: 16px; padding-top: 1vh; flex-shrink: 0;}
+        .header h2 { font-size: 15px; font-weight: 900; margin-bottom: 6px; color: var(--neon-cyan); letter-spacing: 3px; text-transform: uppercase; text-shadow: var(--primary-glow);}
+        .phase-subtitle { font-size: 12px; color: var(--neon-cyan); opacity: 0.8; margin-bottom: 14px; font-weight: 600; letter-spacing: 0.5px; }
+        
+        .progress-container { width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: var(--primary-gradient); transition: width 0.3s ease; box-shadow: var(--primary-glow); }
+        .counter { margin-top: 8px; font-size: 11px; color: var(--text-sub); font-weight: bold; font-family: 'Courier New', monospace;}
+
+        /* ================= 阶段 1：巨型滑卡 & 定位印章 ================= */
+        .card-stack { position: relative; width: 96%; max-width: 420px; height: 74vh; max-height: 640px; margin-top: 1vh; perspective: 1000px; touch-action: none; flex-shrink: 0; z-index: 10;}
+        .card { position: absolute; width: 100%; height: 100%; background: var(--bg-card); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; padding: 48px 24px; text-align: center; cursor: grab; transform-origin: 50% 100%; will-change: transform; user-select: none; border: 1px solid #2a2a2a; overflow: hidden; }
+        .card.dragging { cursor: grabbing; transition: none; border-color: rgba(0,255,255,0.5); box-shadow: 0 0 40px rgba(0,255,255,0.15); }
+        
+        .card-scene-wrapper { width: 100%; text-align: center; margin-bottom: 30px; flex-shrink: 0; position: relative; z-index: 2;}
+        .card-scene { font-size: 17px; font-weight: 900; color: #fff; background: #1a1a1a; padding: 14px 24px; border-radius: 8px; display: inline-block; line-height: 1.5; border: 1px solid #333; letter-spacing: 0.5px;}
+        
+        .option-box { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 2; padding: 10px;}
+        .option-label { font-size: 12px; color: var(--text-sub); margin-bottom: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px;}
+        .option-text { font-size: 24px; font-weight: 800; line-height: 1.5; color: var(--text-main); text-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+        
+        .divider { height: 1px; width: 80%; background: #333; margin: 20px auto; position: relative; flex-shrink: 0; z-index: 2;}
+        .divider::after { content: "VS"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--bg-card); padding: 0 16px; font-size: 16px; font-weight: 900; color: var(--text-sub); border-radius: 10px; font-family: 'Courier New', monospace;}
+        
+        .stamp { position: absolute; left: 50%; padding: 18px 40px; border: 6px solid; border-radius: 12px; font-size: 42px; font-weight: 900; opacity: 0; pointer-events: none; z-index: 10; background: rgba(10,10,10,0.9); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; transition: opacity 0.1s;}
+        .stamp.stamp-a { top: 20%; border-color: var(--neon-magenta); color: var(--neon-magenta); text-shadow: var(--magenta-glow); box-shadow: 0 0 40px rgba(255,0,255,0.3); transform: translateX(-50%) rotate(-12deg); }
+        .stamp.stamp-b { bottom: 20%; border-color: var(--neon-cyan); color: var(--neon-cyan); text-shadow: var(--primary-glow); box-shadow: 0 0 40px rgba(0,255,255,0.3); transform: translateX(-50%) rotate(12deg); }
+
+        .fixed-swipe-guide { position: absolute; bottom: 4vh; left: 50%; transform: translateX(-50%); width: 100%; max-width: 340px; pointer-events: none; z-index: 5; display: flex; justify-content: space-between; padding: 0 15px;}
+        .guide-pill { font-size: 13px; font-weight: 900; background: #0a0a0a; color: #fff; padding: 12px 20px; border-radius: 8px; border: 1px solid #333; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; transition: opacity 0.5s;}
+        .guide-pill.l { color: var(--neon-magenta); border-color: rgba(255,0,255,0.3); box-shadow: 0 4px 16px rgba(255,0,255,0.1); }
+        .guide-pill.r { color: var(--neon-cyan); border-color: rgba(0,255,255,0.3); box-shadow: 0 4px 16px rgba(0,255,255,0.1); }
+
+        /* ================= 过渡页 ================= */
+        .transition-screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; text-align: center; background: var(--bg-pure); padding: 20px; position: absolute; top: 0; left: 0; z-index: 100; }
+        .transition-screen.active { display: flex; animation: fadeInNeo 0.3s forwards; }
+        .trans-icon { font-size: 70px; margin-bottom: 20px; animation: pulseGlowNeo 2s infinite; color: var(--neon-green); text-shadow: 0 0 20px rgba(0,255,65,0.6);}
+        @keyframes pulseGlowNeo { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+        .trans-title { font-size: 24px; font-weight: 900; margin-bottom: 12px; color: var(--text-main); letter-spacing: 1px;}
+        .trans-desc { font-size: 15px; line-height: 1.6; color: var(--text-sub); font-weight: 600; }
+        .trans-highlight { display: inline-block; padding: 10px 28px; background: #111; border: 1px solid var(--neon-green); border-radius: 4px; font-size: 22px; font-weight: 900; margin: 20px 0; color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,65,0.5); box-shadow: 0 0 20px rgba(0,255,65,0.1); letter-spacing: 1px;}
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(5, end) infinite;}
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
+
+        /* ================= 阶段 2、3：问答 ================= */
+        .q-container { width: 100%; flex: 1; display: flex; flex-direction: column; padding-bottom: 20px; }
+        .q-title { font-size: 19px; font-weight: 800; line-height: 1.5; margin-bottom: 20px; color: var(--text-main); }
+        .q-desc { font-size: 15px; color: var(--text-sub); margin-top: -12px; margin-bottom: 16px; line-height: 1.5; }
+        
+        .opt-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;}
+        .opt-item { padding: 20px; background: var(--bg-card); border: 1px solid #222; border-radius: 8px; font-size: 16px; font-weight: 600; line-height: 1.5; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; color: var(--text-main);}
+        .opt-item:hover { border-color: #444; background: #1a1a1a; }
+        .opt-item.selected { background: var(--bg-card); border-color: var(--neon-magenta); box-shadow: 0 0 15px rgba(255,0,255,0.15);}
+        .opt-item.selected .opt-letter { background: var(--neon-magenta); color: #000; border-color: transparent; text-shadow: none; box-shadow: var(--magenta-glow);}
+        
+        .opt-letter { min-width: 34px; height: 34px; border-radius: 4px; background: #1a1a1a; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; margin-right: 18px; color: var(--neon-cyan); transition: all 0.2s; font-family: 'Courier New', monospace;}
+        
+        .text-input { width: 100%; height: 160px; padding: 20px; background: var(--bg-card); border: 1px solid #222; border-radius: 8px; font-size: 16px; line-height: 1.6; resize: none; color: var(--text-main); margin-bottom: 16px; transition: all 0.2s;}
+        .text-input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0,255,255,0.1); }
+        
+        .insp-sub-text { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; margin-bottom: 14px; }
+        .insp-sub-text span { font-size: 13px; color: var(--text-sub); font-weight: 600; }
+        .refresh-btn { color: var(--neon-cyan) !important; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 800 !important;}
+        .refresh-btn:active { opacity: 0.7; }
+        
+        .inspiration-box { display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 0 4px;}
+        .insp-hash { font-size: 14px; color: #777; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid #222; padding: 6px 12px; border-radius: 4px; background: #0a0a0a;}
+        .insp-hash::before { content: '# '; color: var(--neon-magenta); font-weight: 900; opacity: 0.7;}
+        .insp-hash:hover { color: var(--text-main); border-color: #444; background: #111;}
+
+        .nav-actions { margin-top: auto; display: flex; gap: 14px; width: 100%; padding-top: 20px;}
+        .btn-prev { flex: 1; padding: 18px 0; background: transparent; color: var(--text-sub); border: 1px solid #333; border-radius: 4px; font-size: 15px; font-weight: 800; cursor: pointer; text-align: center; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-prev:active { background: #111; color: #fff; border-color: #444; }
+        .btn-next { flex: 2; padding: 18px 0; background: #fff; color: #000; border: none; border-radius: 4px; font-size: 16px; font-weight: 900; cursor: pointer; text-align: center; transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px;}
+        .btn-next:active:not(.disabled) { transform: translateY(1px); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .btn-next.disabled { background: #222; color: #555; cursor: not-allowed; letter-spacing: 1px;}
+
+        /* ================= 阶段 4：报告页 ================= */
+        #view-result { background: #000; padding: 0; } 
+        .result-scroll-container { width: 100%; height: 100%; overflow-y: auto; padding: 50px 24px 150px; -webkit-overflow-scrolling: touch; }
+
+        .hero-section { margin-bottom: 40px; position: relative;}
+        .role-rarity { font-size: 11px; font-weight: 900; color: var(--neon-green); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 8px rgba(0,255,65,0.5);}
+        .role-rarity::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 10px rgba(0,255,65,0.8);}
+        
+        .role-quote-huge { font-size: 30px; font-weight: 900; color: #fff; line-height: 1.4; margin-bottom: 30px; position: relative;}
+        .quote-icon-huge { position: absolute; top: -30px; left: -10px; font-size: 60px; color: var(--neon-magenta); font-family: Georgia, serif; font-weight: 900; opacity: 0.4; z-index: 0;}
+        .role-quote-text { position: relative; z-index: 1; text-shadow: 0 0 20px rgba(255,255,255,0.2);}
+        
+        .role-identity { background: #0a0a0a; border: 1px solid #1a1a1a; padding: 16px 20px; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px;}
+        .role-identity-label { font-size: 13px; color: var(--text-sub); font-weight: 800; letter-spacing: 1px;}
+        .highlight-mark { font-size: 20px; font-weight: 900; color: var(--neon-cyan); text-shadow: var(--primary-glow); }
+        .title-code { font-family: 'Courier New', monospace; color: rgba(255,255,255,0.4); font-size: 16px; letter-spacing: 1px;}
+
+        .social-connection { margin-bottom: 40px; padding: 24px 0; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; display: flex; flex-direction: column; gap: 18px;}
+        .social-text { font-size: 15px; color: #aaa; line-height: 1.7; font-weight: 500;}
+        .social-text b { font-size: 20px; font-weight: 900; color: var(--neon-cyan); margin: 0 2px; text-shadow: var(--primary-glow);}
+        .social-text span.pr-name { color: var(--text-main); font-weight: 800; }
+
+        .avatar-row { display: flex; align-items: center;}
+        .avatar-group { display: flex; align-items: center;}
+        .avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #000; margin-left: -14px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; transition: all 0.5s ease; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
+        .avatar:first-child { margin-left: 0; }
+        .avatar:nth-child(1) { background: #222; border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,255,255,0.2);}
+        .avatar:nth-child(2) { background: #1a1a1a; border-color: var(--neon-magenta); box-shadow: 0 0 10px rgba(255,0,255,0.2);}
+        .avatar:nth-child(3) { background: #111; border-color: var(--neon-green); box-shadow: 0 0 10px rgba(0,255,65,0.2);}
+        .avatar-count { margin-left: 14px; font-size: 14px; font-weight: 800; color: var(--text-sub); font-family: 'Courier New', monospace;}
+
+        .editorial-section { margin-bottom: 45px; }
+        .edi-title { font-size: 17px; font-weight: 900; color: var(--text-main); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px;}
+        .edi-title::before { content: ''; display: inline-block; width: 3px; height: 16px; background: var(--primary-gradient); border-radius: 2px; box-shadow: var(--primary-glow);}
+
+        .stat-block { margin-bottom: 18px; background: #080808; padding: 16px; border-radius: 8px; border: 1px solid #111;}
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;}
+        .stat-label { font-size: 15px; font-weight: 800; color: var(--text-main); }
+        .stat-label span { font-size: 11px; color: var(--text-sub); font-weight: 600; margin-left: 6px; font-family: 'Courier New', monospace; text-transform: uppercase;}
+        .stat-score { font-size: 16px; font-weight: 900; font-family: 'Courier New', monospace; }
+        .stat-bar-bg { width: 100%; height: 3px; background: #1a1a1a; border-radius: 2px; overflow: hidden; margin-bottom: 10px;}
+        .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease-out; }
+        .stat-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5;}
+
+        /* 🔥 内在潜意识独立解析卡片 */
+        .insight-box { background: rgba(0, 255, 255, 0.05); border-left: 3px solid var(--neon-cyan); padding: 24px 20px; border-radius: 0 8px 8px 0; position: relative;}
+        .insight-label { font-size: 12px; color: var(--neon-cyan); font-weight: 900; margin-bottom: 14px; letter-spacing: 2px; font-family: 'Courier New', monospace; text-transform: uppercase;}
+        .insight-text { font-size: 15px; color: #ddd; line-height: 1.8; text-align: justify; }
+        .insight-text b { color: var(--neon-cyan); font-weight: 900; text-shadow: 0 0 10px rgba(0,255,255,0.4); background: rgba(0,255,255,0.1); padding: 2px 4px; border-radius: 2px;}
+
+        /* 专业深度解签 UI */
+        .major-detail-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 30px;}
+        .major-item-neo { background: #0a0a0a; border: 1px solid #1a1a1a; border-left: 2px solid var(--neon-magenta); padding: 20px; border-radius: 4px; transition: all 0.3s ease;}
+        .major-item-neo:hover { background: #111; border-color: #333; box-shadow: 0 4px 15px rgba(255,0,255,0.05);}
+        .major-title-neo { font-size: 16px; font-weight: 900; color: var(--neon-magenta); margin-bottom: 8px; letter-spacing: 0.5px;}
+        .major-desc-neo { font-size: 14px; color: #bbb; line-height: 1.7; text-align: justify;}
+
+        .inline-kryptonite { background: #11080a; border: 1px solid rgba(255,0,0,0.15); border-left: 3px solid #ff0033; border-radius: 4px; padding: 20px; margin-top: 10px;}
+        .inline-kryptonite p { font-size: 14px; color: #bbaaaa; line-height: 1.7; margin: 0;}
+
+        .tag-flow { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
+        .career-pill { background: transparent; color: #aaa; padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; border: 1px solid #222; transition: all 0.2s;}
+        .career-pill:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: var(--primary-glow);}
+
+        .gallery-wrapper { margin: 0 -24px; padding: 0 24px 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: 16px; scroll-snap-type: x mandatory;}
+        .gallery-wrapper::-webkit-scrollbar { display: none; }
+        .mentor-item { min-width: 250px; background: #0a0a0a; border-radius: 8px; padding: 24px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; text-align: left; border: 1px solid #1a1a1a; transition: all 0.3s;}
+        .mentor-item:hover { border-color: #333; background: #111; transform: translateY(-2px);}
+        .mentor-icon { font-size: 32px; margin-bottom: 16px; line-height: 1; background: #151515; width: 56px; height: 56px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid #222;}
+        .mentor-name { font-size: 16px; font-weight: 900; color: var(--text-main); margin-bottom: 8px; letter-spacing: 0.5px;}
+        .mentor-tag { font-size: 11px; font-weight: 800; color: var(--neon-magenta); margin-bottom: 12px; font-family: 'Courier New', monospace; background: rgba(255,0,255,0.08); padding: 4px 8px; border-radius: 4px; display: inline-block;}
+        .mentor-desc { font-size: 13px; color: var(--text-sub); line-height: 1.6;}
+
+        .fixed-bottom-bar { position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 24px 40px; background: linear-gradient(to top, #000 70%, rgba(0,0,0,0)); display: flex; flex-direction: column; gap: 12px; z-index: 10;}
+        .btn-cta-main { width: 100%; padding: 20px 0; background: var(--text-main); color: #000; border: none; border-radius: 4px; font-size: 17px; font-weight: 900; text-align: center; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s;}
+        .btn-cta-main:active { transform: translateY(1px); box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+        .btn-cta-sub { width: 100%; padding: 16px 0; background: transparent; color: var(--text-main); border: 1px solid #444; border-radius: 4px; font-size: 15px; font-weight: 800; text-align: center; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-cta-sub:active { background: #111; border-color: #555; }
+
+        /* ================= 阶段 5：社交专属海报页 ================= */
+        #view-poster { background: #000; padding: 0; display: none; height: 100%; width: 100%; flex-direction: column;}
+        #view-poster.active { display: flex; }
+        
+        .poster-top-bar { width: 100%; padding: 20px 24px; display: flex; justify-content: flex-start; position: relative; z-index: 5;}
+        .poster-back { color: var(--neon-cyan); font-size: 14px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 1px; text-shadow: var(--primary-glow);}
+        
+        .poster-canvas-container { flex: 1; padding: 10px 24px 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; width: 100%;}
+        
+        .poster-card { background: #080808; width: 100%; border-radius: 12px; padding: 40px 24px 32px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #1a1a1a; overflow: hidden;}
+        .poster-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--primary-gradient); box-shadow: var(--primary-glow);}
+        
+        .poster-title { font-size: 11px; font-weight: 900; color: var(--text-sub); letter-spacing: 4px; margin-bottom: 30px; text-transform: uppercase; font-family: 'Courier New', monospace;}
+        
+        .poster-quote-box-huge { margin-bottom: 40px; position: relative; padding: 0 10px; }
+        .poster-quote-text { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.5; font-style: italic; text-shadow: 0 0 15px rgba(255,255,255,0.2);}
+        
+        .poster-role-info { background: rgba(0,255,255,0.05); border: 1px solid #1a1a1a; border-radius: 8px; padding: 16px 20px; margin-bottom: 30px; width: 100%;}
+        .poster-subtitle { font-size: 14px; font-weight: 800; color: #aaa; margin-bottom: 6px;}
+        .poster-role-name { font-size: 24px; font-weight: 900; color: var(--neon-cyan); letter-spacing: 1px; text-shadow: var(--primary-glow);}
+        
+        .poster-rarity-text { font-size: 13px; font-weight: 700; color: #777; margin-bottom: 35px;}
+        .poster-rarity-text span { color: var(--neon-magenta); font-weight: 900; font-size: 18px; margin: 0 4px; text-shadow: var(--magenta-glow); font-family: 'Courier New', monospace;}
+        
+        .poster-divider { width: 100%; border-top: 1px dashed #222; margin-bottom: 35px;}
+        
+        .poster-qr-area { display: flex; flex-direction: column; align-items: center; gap: 14px;}
+        .poster-qr-box { width: 90px; height: 90px; background: #fff; border-radius: 4px; border: none; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #000; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-align: center; padding: 10px; box-shadow: 0 0 15px rgba(255,255,255,0.2);}
+        .poster-qr-desc { font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.5px;}
+        
+        .poster-btn-group { padding: 10px 24px 45px; width: 100%; display: flex; gap: 14px; background: linear-gradient(to top, #000 80%, rgba(0,0,0,0)); z-index: 10;}
+        .btn-poster-left { flex: 1; padding: 18px 0; background: transparent; color: #eee; border: 1px solid #333; border-radius: 4px; font-size: 15px; font-weight: 800; cursor: pointer; text-align: center; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-poster-left:hover { border-color: #555; background: #111; }
+        .btn-poster-right { flex: 1; padding: 18px 0; background: var(--primary-gradient); color: #000; border: none; border-radius: 4px; font-size: 16px; font-weight: 900; cursor: pointer; text-align: center; box-shadow: var(--primary-glow); transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px;}
+        .btn-poster-right:active { transform: translateY(1px); box-shadow: 0 0 25px rgba(0,255,255,0.5); }
+
+        .result-scroll-container::-webkit-scrollbar, .poster-canvas-container::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <div class="view-container active" id="view-intro">
+        <div class="intro-bg-glow"></div>
+        <div class="intro-bg-glow-2"></div>
+        
+        <div class="intro-content-wrap">
+            <span class="intro-tag">6大世界核心 × 潜意识算法测定</span>
+            <h1 class="intro-hero">世界有很多种玩法，<br>你是哪一种玩家？</h1>
+            <div class="intro-roles-list">
+                <span>有人负责创造世界</span>
+                <span>有人负责理解世界</span>
+                <span>有人负责改变世界</span>
+            </div>
+            <div class="intro-hook-wrap">
+                <div class="hook-content">
+                    但大多数人，一生都不知道自己的<span class="hook-hl">底层直觉</span>，<br>究竟适合成为哪一种<span class="hook-hl-main">世界玩家</span>。
+                </div>
+            </div>
+        </div>
+        
+        <div class="intro-bottom-wrap">
+            <div class="intro-bottom-text">
+                开启世界玩法，<br>
+                <span>3</span> 分钟找到属于你的角色，<br>
+                也许会让你更清楚未来该往哪里走。
+            </div>
+            <button class="btn-intro" onclick="startTest()">开启角色探索</button>
+        </div>
+    </div>
+
+    <div class="view-container" id="view-swipe">
+        <div class="header">
+            <h2>PHASE 01: 直觉探测</h2>
+            <div class="phase-subtitle">放下一切思考，用直觉选择</div>
+            <div class="progress-container"><div class="progress-bar" id="pb-swipe"></div></div>
+            <div class="counter" id="count-swipe">0 / 15</div>
+        </div>
+        
+        <div class="fixed-swipe-guide" id="swipeGuide">
+            <div class="guide-pill l">👈 左滑选A</div>
+            <div class="guide-pill r">右滑选B 👉</div>
+        </div>
+        <div class="card-stack" id="cardStack"></div>
+    </div>
+
+    <div class="transition-screen" id="view-transition">
+        <div class="trans-icon">⌬</div>
+        <div class="trans-title">潜意识算法解析中</div>
+        <div class="trans-desc">系统初步捕获了你的底层潜意识波形：</div>
+        <div class="trans-highlight" id="transPrimaryTrait">--</div>
+        <div class="trans-desc" style="margin-top: 40px; font-size: 14px; font-family: 'Courier New', monospace;">
+            正在构建极限情境压测环境<span class="loading-dots"></span>
+        </div>
+    </div>
+
+    <div class="view-container" id="view-qa">
+        <div class="header">
+            <h2 id="qa-module-title">极限情境测试</h2>
+            <div class="phase-subtitle" id="qa-module-sub"></div>
+            <div class="progress-container"><div class="progress-bar" id="pb-qa"></div></div>
+            <div class="counter" id="count-qa">0 / 8</div>
+        </div>
+        <div class="q-container" id="q-container"></div>
+    </div>
+
+    <div class="view-container" id="view-result">
+        <div class="result-scroll-container">
+            
+            <div class="hero-section">
+                <div class="role-rarity" id="resRarity">SSR 级天赋</div>
+                
+                <div class="role-quote-huge">
+                    <div class="quote-icon-huge">“</div>
+                    <div class="role-quote-text" id="resQuote">--</div>
+                </div>
+
+                <div class="role-identity">
+                    <span class="role-identity-label">天生玩家身份：</span>
+                    <span class="highlight-mark" id="resRoleName">--</span>
+                    <span class="title-code" id="resCodeSuffix">--</span>
+                </div>
+            </div>
+
+            <div class="social-connection">
+                <div class="social-text">
+                    在全网觉醒者中，仅有 <b id="resPercent">--</b> 的人与你产生灵魂共振。你们都拥有<span id="resPrimaryName" class="pr-name">--</span>的底层直觉。在这里，你并不孤独。
+                </div>
+                <div class="avatar-row">
+                    <div class="avatar-group">
+                        <div class="avatar avatar-1" id="av1">A</div>
+                        <div class="avatar avatar-2" id="av2">K</div>
+                        <div class="avatar avatar-3" id="av3">L</div>
+                    </div>
+                    <div class="avatar-count" id="resCount">-- 人已集结</div>
+                </div>
+            </div>
+
+            <div class="editorial-section">
+                <div class="edi-title">天赋驱动面板</div>
+                <div id="resScoreBars"></div>
+            </div>
+
+            <div class="editorial-section">
+                <div class="edi-title">内在潜意识解析</div>
+                <div class="insight-box">
+                    <div class="insight-label">✦ 核心动机解码</div>
+                    <div class="insight-text" id="resMajorReason">--</div>
+                </div>
+            </div>
+
+            <div class="editorial-section">
+                <div class="edi-title">核心契合专业解析</div>
+                
+                <div class="major-detail-list" id="resMajorDetails"></div>
+                
+                <div style="font-size: 13px; font-weight: 800; color: #888; margin: 24px 0 12px; text-transform: uppercase;">未来高光功能岗位预测</div>
+                <div class="tag-flow" id="resCareersTags"></div>
+            </div>
+
+            <div class="editorial-section">
+                <div class="edi-title">天赋觉醒指南</div>
+                <div class="inline-kryptonite">
+                    <span>需要避开的隐形消耗：</span>
+                    <p id="resWeakness">--</p>
+                </div>
+            </div>
+
+            <div class="editorial-section" style="margin-bottom: 0;">
+                <div class="edi-title">同源觉醒导师</div>
+                <div class="gallery-wrapper" id="resModelsGrid"></div>
+            </div>
+            
+        </div>
+
+        <div class="fixed-bottom-bar">
+            <button class="btn-cta-main" onclick="alert('系统正在提取评估数据，即将跳转！')">🎯 测测你能申请什么大学</button>
+            <button class="btn-cta-sub" onclick="openPoster()">生成专属身份海报分享</button>
+        </div>
+    </div>
+
+    <div class="view-container" id="view-poster">
+        <div class="poster-top-bar">
+            <div class="poster-back" onclick="closePoster()">← 返回报告</div>
+        </div>
+        
+        <div class="poster-canvas-container">
+            <div class="poster-card">
+                <div class="poster-title">NEO-ID 世界玩家档案</div>
+                
+                <div class="poster-quote-box-huge">
+                    <div class="poster-quote-text" id="posterQuoteText">--</div>
+                </div>
+
+                <div class="poster-role-info">
+                    <div class="poster-subtitle">我是</div>
+                    <div class="poster-role-name" id="posterRoleName">--</div>
+                </div>
+                
+                <div class="poster-rarity-text">全网仅有 <span id="posterPercentText">--</span> 觉醒了该组合</div>
+                
+                <div class="poster-divider"></div>
+                
+                <div class="poster-qr-area">
+                    <div class="poster-qr-box">扫码<br>觉醒</div>
+                    <div class="poster-qr-desc">长按扫码，测测你的世界玩法</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="poster-btn-group">
+            <button class="btn-poster-left" onclick="alert('即将跳转匹配！')">测测天命大学</button>
+            <button class="btn-poster-right" onclick="alert('💡 请长按上方海报保存图片，发送给朋友！')">发给朋友</button>
+        </div>
+    </div>
+
+</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            let swipeScores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+            let scenarioSelections = {}; 
+            let essayAnswersMap = {};    
+
+            // 🔥 行为追踪记录器
+            let userTraceLog = { R:[], I:[], A:[], S:[], E:[], C:[] };
+
+            const traitDict = {
+                "R": { name: "创造者", en: "Realistic", shortDesc: "建造真实世界的人", desc: "有人负责想世界，而你负责把世界做出来。" },
+                "I": { name: "解谜者", en: "Investigative", shortDesc: "破解世界规律的人", desc: "别人看到现象，而你看到规律。" },
+                "A": { name: "造梦者", en: "Artistic", shortDesc: "创造新想象的人", desc: "别人活在现实里，而你活在可能性里。" },
+                "S": { name: "同行者", en: "Social", shortDesc: "与人一起成长的人", desc: "世界的问题很多，但你更关心人。" },
+                "E": { name: "开创者", en: "Enterprising", shortDesc: "推动新机会与新事物的人", desc: "不是等待机会，而是开创新的可能。" },
+                "C": { name: "秩序师", en: "Conventional", shortDesc: "构建规则与系统的人", desc: "混乱只是还没有被设计。" }
+            };
+
+            const quotesDB = {
+                "RI": "你不只想理解世界，你更想亲手把它创造出来。", "RA": "在你眼里，想象力如果不能变成现实，就太可惜了。", "RS": "你很少空谈理想，你更习惯把人的问题真正解决掉。", "RE": "你看到的不只是技术，而是一个可以改变世界的产品。", "RC": "世界在你眼里是一套结构，而你习惯把它搭得更稳。", 
+                "IR": "规律如果不能被验证，就还不算真正理解。", "IA": "研究世界的同时，你也在创造新的思想。", "IS": "你研究的不只是世界，还有人。", "IE": "你总是比别人更早看见事情会往哪里走。", "IC": "每个系统都有隐藏逻辑，而你很擅长找到它。",
+                "AR": "在你这里，创意不仅是想法，也是可以被创造的东西。", "AI": "你喜欢探索思想，然后把它变成新的表达。", "AS": "你创造的不只是作品，而是一种感觉。", "AE": "有些人做内容，而你更可能创造一种文化。", "AC": "你不只是创造美，你在定义什么是美。", 
+                "SR": "你不只想理解人，你会真的帮他们改变生活。", "SI": "你很擅长陪一个人走过重要的人生阶段。", "SA": "和你在一起的人，常常会重新相信自己。", "SE": "你擅长把一群人连接在一起，做成一件有意义的事。", "SC": "群体需要稳定，而你很擅长维持这种平衡。",
+                "ER": "你习惯从一个想法开始，然后把它变成真正存在的东西。", "EI": "当别人还在观察世界时，你已经开始行动。", "EA": "你更容易创造趋势，而不是跟随趋势。", "ES": "很多人可以完成任务，但你更擅长带一群人做更大的事。", "EC": "你看到的不只是机会，还有让它持续运转的结构。", 
+                "CR": "再复杂的工程，在你手里都会变得清晰。", "CI": "你习惯把混乱的信息整理成一个清晰的体系。", "CA": "你喜欢在创意背后建立一套优雅的规则。", "CS": "当团队开始混乱时，你会让一切重新运转起来。", "CE": "你很擅长让一个组织长期稳定地成长。"
+            };
+
+            const fullSwipeQs = [
+                { scene: "加入前沿无人机项目，你倾向于：", optionA: "亲自上阵修复坠毁的硬件", optionB: "在电脑前探究防撞算法逻辑", typeA: "R", typeB: "I" },
+                { scene: "拥有专属工作室，你更愿意：", optionA: "在木工坊里亲手打造实木家具", optionB: "在软件里设计赛博朋克视觉图", typeA: "R", typeB: "A" },
+                { scene: "无聊的周末，你倾向的打发时间方式：", optionA: "独自在房间里组装复杂乐高", optionB: "在社区耐心辅导孤独症儿童", typeA: "R", typeB: "S" },
+                { scene: "参与荒野求生真人秀，你更愿意：", optionA: "亲自在野外搭建功能性营地设备", optionB: "站在台上向投资人推销营地企划", typeA: "R", typeB: "E" },
+                { scene: "如果必须处理极其耗时的麻烦事：", optionA: "动手拆解并清理一台复杂的发动机", optionB: "用 Excel 严格核对全年的繁杂流水", typeA: "R", typeB: "C" },
+                { scene: "探索宇宙的终极奥秘，你更倾向于：", optionA: "深度探究量子物理的底层规律", optionB: "构思并写下关于平行宇宙的小说", typeA: "I", typeB: "A" },
+                { scene: "在顶尖的肿瘤医院实习，你倾向于：", optionA: "闭关在实验室寻找癌症靶向药机制", optionB: "在病房握着患者的手进行心理疏导", typeA: "I", typeB: "S" },
+                { scene: "拿到深度的行业报告，你下一步是：", optionA: "沉浸式分析行业过去十年的数据", optionB: "立刻跳出数据，制定强势并购计划", typeA: "I", typeB: "E" },
+                { scene: "接手庞大且混乱的软件系统，你愿意：", optionA: "钻研如何用全新逻辑实现复杂功能", optionB: "给现有的一万行老代码写极其规范注释", typeA: "I", typeB: "C" },
+                { scene: "呼吁大众关爱流浪动物，你倾向于：", optionA: "独自把自己关在画室里完成一幅画", optionB: "组织一场盛大的公益艺术展为它们筹款", typeA: "A", typeB: "S" },
+                { scene: "作为初创公司核心骨干，你愿意负责：", optionA: "沉浸式死磕 UI 交互体验，追求极致", optionB: "拿着产品去和渠道商进行千万级谈判", typeA: "A", typeB: "E" },
+                { scene: "面对截然不同的两项任务，你选择：", optionA: "创作一段没有规则限制的先锋音乐", optionB: "严格按出版要求逐字校对 500 页教材", typeA: "A", typeB: "C" },
+                { scene: "面对团队利润下滑危机，你会：", optionA: "耐心倾听成员的情绪，化解人际冲突", optionB: "强硬裁掉不合格员工，保证核心利润", typeA: "S", typeB: "E" },
+                { scene: "负责大学迎新工作，你更愿意：", optionA: "给新生做耐心、细致的一对一入学指导", optionB: "收集、整理并录入全校 3000 名新生档案", typeA: "S", typeB: "C" },
+                { scene: "作为跨国公司高管，你更愿意去做的决策：", optionA: "承担巨大风险，去开拓未知的海外市场", optionB: "留在总部，制定严密的财务审计制度", typeA: "E", typeB: "C" },
+                { scene: "记录一段难忘的旅行，你倾向于：", optionA: "研究相机的光圈快门物理机械结构", optionB: "用手机APP剪辑一段绝美且感性的Vlog", typeA: "R", typeB: "A" },
+                { scene: "面对一款爆火的电子游戏，你会：", optionA: "拆解其背后的数值成瘾算法机制", optionB: "思考如何把这款游戏代理并推向海外赚钱", typeA: "I", typeB: "E" },
+                { scene: "遇到情绪崩溃的朋友，你第一反应是：", optionA: "敏锐察觉其低落并耐心进行情感开导", optionB: "帮Ta把混乱的事情列成一张清晰的待办清单", typeA: "S", typeB: "C" },
+                { scene: "作为校级社团的主席，你更擅长：", optionA: "制定社团明年的全校拉新战略和品牌定位", optionB: "梳理社团过去一年的所有发票和财务流水", typeA: "E", typeB: "C" },
+                { scene: "如果你是一位科幻创作者，你更着迷：", optionA: "探究引力波与时间膨胀背后的严密物理公式", optionB: "构思一个没有任何重力限制的唯美奇幻世界", typeA: "I", typeB: "A" },
+                { scene: "组织一场破冰活动，你希望自己是：", optionA: "在后台默默把复杂的灯光音响设备接好的人", optionB: "站在舞台中央讲笑话让所有人迅速熟络的人", typeA: "R", typeB: "S" },
+                { scene: "结识了一支很有才华的地下乐队，你会：", optionA: "为他们设计一张极具视觉冲击力的先锋专辑封面", optionB: "帮他们去和音乐节主办方谈下极高的出场费", typeA: "A", typeB: "E" },
+                { scene: "改造自己的房间，你更享受：", optionA: "买各种工具亲手搭建一套智能家居物理电路", optionB: "整理一份极其详细的家居分类说明书和收纳清单", typeA: "R", typeB: "C" },
+                { scene: "选择一份具有社会观察性质的工作：", optionA: "在实验室里通过显微镜长期观察细胞分裂周期", optionB: "在福利院里长期观察弱势儿童的行为并提供帮助", typeA: "I", typeB: "S" },
+                { scene: "接手一本校园杂志的排版工作：", optionA: "对齐所有文字，制定一套极其严谨的排版网格", optionB: "无视规则，为封面画一幅极具冲击力的抽象插图", typeA: "C", typeB: "A" },
+                { scene: "要把一个绝妙的点子落地，你会：", optionA: "拿着商业企划书到处去找风投机构拉几百万赞助", optionB: "拿着图纸去工厂，亲手把这个样品敲打出来", typeA: "E", typeB: "R" },
+                { scene: "面对一堆复杂的数字，你更愿意：", optionA: "研究股市暴跌背后的深层宏观经济学逻辑", optionB: "仔细核对上个月家庭日常收支账单上的每一分钱", typeA: "I", typeB: "C" },
+                { scene: "消化自己极度悲伤的情绪，你会：", optionA: "找个能懂你的朋友倾诉烦恼并获得情感抚慰", optionB: "把这种情绪写成一首极其动人且私密的诗", typeA: "S", typeB: "A" },
+                { scene: "团队里有人一直拖进度，你会：", "optionA": "强硬地将其开除，绝不允许任何人影响团队目标", optionB: "找Ta私下谈心，帮Ta解决背后的心理障碍", typeA: "E", typeB: "S" },
+                { scene: "拿到一台全新的电脑，你的第一反应是：", optionA: "建立极其规范的硬盘分区和文件命名规则", optionB: "拆开后盖，给它换上顶级的 CPU 和显卡硬件", typeA: "C", typeB: "R" }
+            ];
+
+            const fullScenarioQs = [
+                { title: "1. 【资源战】学校突然批给你 10 万起盘新项目，你拿到钱第一反应是？", options: [ { label: "A", text: "算账建模：拉 Excel 算清预算分配和风控逻辑。", val: "C" }, { label: "B", text: "找人组局：脑子里浮现几个牛人，画大饼忽悠进团队。", val: "E" }, { label: "C", text: "死磕痛点：研究校园底层逻辑漏洞，寻找最优解。", val: "I" }, { label: "D", text: "搞点炫的：项目的视觉呈现和概念包装必须颠覆。", val: "A" }, { label: "E", text: "造福弱势：成立互助基金帮助有具体困难的同学。", val: "S" }, { label: "F", text: "买硬装备：立马采购高配置服务器、3D打印设备。", val: "R" } ] },
+                { title: "2. 【生存局】如果在末日废土世界加入营地，你能靠什么活到大结局？", options: [ { label: "A", text: "快速修理废弃电站、改装越野车和制作武器。", val: "R" }, { label: "B", text: "分析毒气蔓延的数据规律，推演出最安全的路线。", val: "I" }, { label: "C", text: "资源匮乏时，画出营地壁画、用音乐安抚情绪。", val: "A" }, { label: "D", text: "敏锐察觉谁快要崩溃，及时做心理干预团结大家。", val: "S" }, { label: "E", text: "在营地暴乱时建立新秩序，带领大家抢夺地盘。", val: "E" }, { label: "F", text: "把仅存的食物弹药进行最严密的入库登记和配给。", val: "C" } ] },
+                { title: "3. 【数字症】抛开社交软件，哪类应用或内容是你真正的“时间黑洞”？", options: [ { label: "A", text: "效率与记账 (Notion)：看着所有事物井井有条极度舒适。", val: "C" }, { label: "B", text: "硬核科普 (维基百科)：想搞懂黑洞原理或晦涩理论。", val: "I" }, { label: "C", text: "闲鱼与金融 (股票基金)：享受低买高卖、研究套利。", val: "E" }, { label: "D", text: "创作与视觉 (Pinterest/剪映)：对排版转场毫无抵抗力。", val: "A" }, { label: "E", text: "互助问答 (知乎情感区)：看别人的烦恼并长文开导。", val: "S" }, { label: "F", text: "硬核评测 (数码/拆解)：看大神把复杂机械大卸八块。", val: "R" } ] },
+                { title: "4. 【修罗场】你最怕遇到哪种“小组作业灾难”？", options: [ { label: "A", text: "逻辑稀碎：瞎出主意，没人去探究底层的科学原理。", val: "I" }, { label: "B", text: "审美极差：最后的 PPT 模板丑到令人发指，排版杂乱。", val: "A" }, { label: "C", text: "争权夺利：几个人为了抢队长头衔暗中较劲。", val: "E" }, { label: "D", text: "毫无规矩：大家都不遵守 DDL，群里消息乱糟糟。", val: "C" }, { label: "E", text: "情绪内耗：队内有人玻璃心，整个团队氛围压抑。", val: "S" }, { label: "F", text: "只说不练：满嘴大词，但到了真要动手时全缩了。", val: "R" } ] },
+                { title: "5. 【巅峰对决】如果和马斯克在电梯独处3分钟，你最想探讨什么？", options: [ { label: "A", text: "火箭推进器的最新钛合金材料与物理锻造工艺。", val: "R" }, { label: "B", text: "脑机接口背后的神经学代码模型与脑电波算法。", val: "I" }, { label: "C", text: "火星殖民地的美学建筑风格与人类视觉文明呈现。", val: "A" }, { label: "D", text: "AI 爆发后，如何通过全民基本收入保障底层尊严。", val: "S" }, { label: "E", text: "如果强行收购某巨头失败，下一步的资本对冲布局。", val: "E" }, { label: "F", text: "旗下几家体量庞大的公司，如何在混乱中维持合规。", val: "C" } ] },
+                { title: "6. 【社团纳新】社团急需招募新成员，你最愿意负责哪个环节？", options: [ { label: "A", text: "构思最吸引眼球的海报和极具创意的招新文案。", val: "A" }, { label: "B", text: "规划并搭建一套全自动的报名信息统计系统。", val: "C" }, { label: "C", text: "去各个班级或宿舍串门，用热情感染大家加入。", val: "S" }, { label: "D", text: "分析历年纳新数据，找出转化率最高的招募渠道。", val: "I" }, { label: "E", text: "借用其他社团或外联赞助的资源，搞一波联合抽奖。", val: "E" }, { label: "F", text: "亲自去采购物料，并动手搭建一个极其拉风的实体摊位。", val: "R" } ] },
+                { title: "7. 【自由假期】如果你有一周完全没有作业的假期，你倾向于？", options: [ { label: "A", text: "找个木工坊或陶艺室，亲手做点看得见摸得着的东西。", val: "R" }, { label: "B", text: "窝在家里，读几本平时没时间看的深度硬核科普书。", val: "I" }, { label: "C", text: "去这座城市的各个角落看艺术展，沉浸在美感中。", val: "A" }, { label: "D", text: "去流浪动物救助站做义工，或者陪孤单的老人聊天。", val: "S" }, { label: "E", text: "研究几个刚火起来的商业模式，甚至尝试去摆个摊。", val: "E" }, { label: "F", text: "把乱糟糟的房间和电脑里积灰的文件彻底收纳整理一遍。", val: "C" } ] },
+                { title: "8. 【突发危机】校庆晚会现场的设备突然全部罢工，你会？", options: [ { label: "A", text: "立刻蹲下来检查线路和接口，尝试进行物理修复。", val: "R" }, { label: "B", text: "冷静排查是软件系统崩了还是硬件短路的底层逻辑。", val: "I" }, { label: "C", text: "不管那么多，立刻冲上台即兴清唱，用感染力稳住气氛。", val: "A" }, { label: "D", text: "赶紧走到台下安抚前排焦躁的观众，给他们递点水。", val: "S" }, { label: "E", text: "立刻联系备用供应商，甚至去隔壁学校强行借一套设备。", val: "E" }, { label: "F", text: "拿出准备好的应急预案，按步骤有条不紊地疏散或调整。", val: "C" } ] },
+                { title: "9. 【科技超能力】如果能掌握一项未来科技，你希望是？", options: [ { label: "A", text: "能够用意念 3D 打印任何精密实体零件的能力。", val: "R" }, { label: "B", text: "只看一眼就能瞬间理解极其复杂的代码和数学公式。", val: "I" }, { label: "C", text: "将自己脑海中的梦境直接转化为超高清的全息电影。", val: "A" }, { label: "D", text: "能够精准感知并治愈他人内心深处抑郁和创伤的能力。", val: "S" }, { label: "E", text: "能够精准预测未来三年商业风口和全球资源流向的能力。", val: "E" }, { label: "F", text: "只要打个响指，就能让世界上所有混乱的数据库完美归档。", val: "C" } ] },
+                { title: "10. 【神仙选修课】学校开设了六门极其硬核的选修课，你第一直觉选？", options: [ { label: "A", text: "《机械动力学与机器人实体组装实操》", val: "R" }, { label: "B", text: "《犯罪心理学与连环案件逻辑推演》", val: "I" }, { label: "C", text: "《先锋实验戏剧与极端视觉美学表达》", val: "A" }, { label: "D", text: "《积极心理治疗与深度人际沟通艺术》", val: "S" }, { label: "E", text: "《硅谷商业实战演练与资本杠杆博弈》", val: "E" }, { label: "F", text: "《大数据质量管理与极度严密的财务精算》", val: "C" } ] }
+            ];
+
+            const fullEssayQs = [
+                { title: "【空白支票】", desc: "如果一张空白支票让你未来10年死磕一个问题，你想攻克什么项目？", tags: ["开发平价清洁能源", "攻克罕见病靶向药", "研发通用人工智能", "重塑乡村教育系统", "建立火星殖民基地", "破解人类衰老基因", "打造去中心化金融", "消除微塑料污染"] },
+                { title: "【绝对底线】", desc: "一份工作如果给你极高薪水，但每天必须面对 ____________，你绝对会辞职。", tags: ["无意义的马屁与内卷", "违背道德底线的指令", "极其死板的官僚主义", "毫无审美的一坨垃圾", "无休止的机械重复", "剥夺个人表达自由", "牺牲健康换取利润", "论资排辈的体系"] },
+                { title: "【高光判词】", desc: "想象你30岁登顶行业大会，写下大屏幕上介绍你的1句“高光标签”。", tags: ["创立了改变行业的...", "设计颠覆了大众的...", "让百万边缘人受益于...", "单枪匹马突破了...", "用文字重新定义了...", "打破了传统学科边界", "建立了一个估值百亿的..."] },
+                { title: "【完美乌托邦】", desc: "如果你有权设计一个理想的学校或公司，它绝对不能有的一项规定是 _______。", tags: ["僵化的打卡考勤制度", "按资排辈的晋升机制", "禁止员工奇装异服", "无意义的洗脑宣发会", "必须迎合领导的喜好", "下班后连环消息轰炸", "不允许任何失败试错"] },
+                { title: "【超能力代价】", desc: "获得顶尖天赋的代价是永远失去 ____________，你宁愿不要这项天赋。", tags: ["共情他人的能力", "独立思考的灵魂", "感受生活美的直觉", "掌控自己时间的权利", "冒险与打破常规的勇气", "亲手创造事物的快乐", "拥有真诚社交的可能"] },
+                { title: "【百年墓志铭】", desc: "一百年后，你希望后人在你的传记封面上，写下哪三个词来总结你的一生？", tags: ["颠覆·创造·不朽", "严谨·真理·智慧", "温和·治愈·大爱", "秩序·守护·基石", "破局·胆识·领袖", "自由·极致·灵感", "独立·探索·纯粹"] }
+            ];
+
+            const swipeQs = [...fullSwipeQs].sort(() => 0.5 - Math.random()).slice(0, 15);
+            const scenarioQs = [...fullScenarioQs].sort(() => 0.5 - Math.random()).slice(0, 5);
+            const essayQs = [...fullEssayQs].sort(() => 0.5 - Math.random()).slice(0, 3);
+            const qaTotal = scenarioQs.length + essayQs.length;
+
+            let currentQaIndex = 0, swipeIndex = 0;
+            let isDragging = false, startX = 0, currentX = 0, topCard = null;
+            const stack = document.getElementById('cardStack');
+            
+            window.startTest = function() {
+                switchView('view-intro', 'view-swipe');
+                setTimeout(() => { if(document.getElementById('cardStack').children.length === 0) { initSwipe(); } }, 100);
+            }
+
+            function initSwipe() {
+                for (let i = swipeQs.length - 1; i >= 0; i--) {
+                    const q = swipeQs[i]; const card = document.createElement('div'); card.className = 'card';
+                    card.innerHTML = `<div class="card-scene-wrapper"><div class="card-scene">${q.scene}</div></div><div class="option-box"><div class="option-label">Option A</div><div class="option-text">${q.optionA}</div></div><div class="divider"></div><div class="option-box"><div class="option-label">Option B</div><div class="option-text">${q.optionB}</div></div>`;
+                    stack.appendChild(card);
+                }
+                updateSwipeVisuals(); bindTopCard(); updateSwipeProgress();
+            }
+            
+            function updateSwipeVisuals() { 
+                const cards = Array.from(stack.children).reverse().filter(c => c.classList.contains('card'));
+                cards.forEach((card, i) => { 
+                    if(i > 2) { card.style.opacity = 0; card.style.pointerEvents = 'none'; return; } 
+                    card.style.opacity = 1 - (i * 0.15); card.style.transform = `translateY(${i * 12}px) scale(${1 - i * 0.04})`; card.style.zIndex = swipeQs.length - i; 
+                    card.style.pointerEvents = i === 0 ? 'auto' : 'none';
+                }); 
+            }
+            
+            function updateSwipeProgress() { document.getElementById('pb-swipe').style.width = `${(swipeIndex / swipeQs.length) * 100}%`; document.getElementById('count-swipe').innerText = `${swipeIndex} / ${swipeQs.length}`; }
+            
+            function bindTopCard() {
+                if (swipeIndex >= swipeQs.length) { showTransition(); return; }
+                topCard = stack.lastElementChild;
+                if (!topCard || !topCard.classList.contains('card')) return; 
+
+                topCard.addEventListener('pointerdown', handleDown);
+            }
+
+            function handleDown(e) {
+                isDragging = true; startX = e.clientX || (e.touches && e.touches[0].clientX); 
+                if(!startX) return;
+                topCard.classList.add('dragging'); 
+                document.addEventListener('pointermove', handleMove, {passive: false}); 
+                document.addEventListener('pointerup', handleEnd);
+                document.addEventListener('touchmove', handleMove, {passive: false});
+                document.addEventListener('touchend', handleEnd);
+            }
+
+            function handleMove(e) {
+                if (!isDragging) return; 
+                let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                if(!clientX) return;
+                
+                currentX = clientX - startX; 
+                const rotate = currentX * 0.1;
+                topCard.style.transform = `translate(${currentX}px, 0) rotate(${rotate}deg)`;
+                
+                const badgeL = topCard.querySelector('.stamp.stamp-a') || createStamp(topCard, '👈 锁定 A', 'stamp-a');
+                const badgeR = topCard.querySelector('.stamp.stamp-b') || createStamp(topCard, '锁定 B 👉', 'stamp-b');
+                
+                if (currentX < -40) { badgeL.style.opacity = Math.min((currentX * -1) / 80, 1); badgeR.style.opacity = 0; }
+                else if (currentX > 40) { badgeR.style.opacity = Math.min(currentX / 80, 1); badgeL.style.opacity = 0; }
+                else { badgeL.style.opacity = 0; badgeR.style.opacity = 0; }
+            }
+            
+            function createStamp(card, text, cls) {
+                const b = document.createElement('div'); b.className = `stamp ${cls}`; b.innerText = text;
+                card.appendChild(b); return b;
+            }
+
+            function handleEnd() {
+                if (!isDragging) return; isDragging = false; topCard.classList.remove('dragging');
+                document.removeEventListener('pointermove', handleMove); document.removeEventListener('pointerup', handleEnd);
+                document.removeEventListener('touchmove', handleMove); document.removeEventListener('touchend', handleEnd);
+                
+                if (currentX < -120) { swipeOut(-1, swipeQs[swipeIndex].typeA, swipeQs[swipeIndex].scene, swipeQs[swipeIndex].optionA); }
+                else if (currentX > 120) { swipeOut(1, swipeQs[swipeIndex].typeB, swipeQs[swipeIndex].scene, swipeQs[swipeIndex].optionB); }
+                else { 
+                    topCard.style.transform = `translateY(0) scale(1)`; 
+                    const badges = topCard.querySelectorAll('.stamp'); badges.forEach(b => b.style.opacity = 0);
+                } 
+                currentX = 0;
+            }
+            
+            function swipeOut(dir, type, scene, choice) {
+                swipeScores[type] += 1; 
+                userTraceLog[type].push({ scene: scene, choice: choice });
+                swipeIndex++; updateSwipeProgress();
+
+                topCard.style.transform = `translate(${dir * window.innerWidth * 1.5}px, ${dir * 100}px) rotate(${dir * 60}deg)`; 
+                topCard.style.opacity = 0; topCard.style.pointerEvents = 'none';
+                
+                const oldCard = topCard; topCard.removeEventListener('pointerdown', handleDown);
+                setTimeout(() => { oldCard.remove(); updateSwipeVisuals(); bindTopCard(); }, 300);
+            }
+
+            function showTransition() {
+                document.getElementById('view-swipe').classList.remove('active');
+                const sorted = Object.entries(swipeScores).sort((a, b) => b[1] - a[1]);
+                document.getElementById('transPrimaryTrait').innerText = `${traitDict[sorted[0][0]].name}`;
+                
+                const transView = document.getElementById('view-transition');
+                transView.classList.add('active');
+                setTimeout(() => { transView.classList.remove('active'); renderQaPage(); document.getElementById('view-qa').classList.add('active'); }, 1800);
+            }
+
+            function renderQaPage() {
+                const container = document.getElementById('q-container'); 
+                document.getElementById('pb-qa').style.width = `${(currentQaIndex / qaTotal) * 100}%`; 
+                document.getElementById('count-qa').innerText = `${currentQaIndex} / ${qaTotal}`;
+                
+                let contentHtml = '';
+                let btnDisabled = "";
+
+                if (currentQaIndex < scenarioQs.length) {
+                    document.getElementById('qa-module-title').innerText = "PHASE 02: 极限情境压测"; 
+                    if(document.getElementById('qa-module-sub')) document.getElementById('qa-module-sub').innerText = "忘记现实束缚，暴露你最本能的野心";
+                    const q = scenarioQs[currentQaIndex];
+                    contentHtml += `<div class="q-title">${q.title}</div><div class="opt-list">`;
+                    
+                    let hasSelection = !!scenarioSelections[currentQaIndex];
+                    if(!hasSelection) btnDisabled = "disabled";
+
+                    q.options.forEach(opt => { 
+                        let isSel = scenarioSelections[currentQaIndex] === opt.val ? 'selected' : '';
+                        contentHtml += `<div class="opt-item ${isSel}" onclick="handleOptionSelect(this, '${opt.val}', '${q.title}', '${opt.text}')"><div class="opt-letter">${opt.label}</div><div>${opt.text}</div></div>`; 
+                    });
+                    contentHtml += `</div>`;
+                } else if (currentQaIndex < qaTotal) {
+                    document.getElementById('qa-module-title').innerText = "PHASE 03: 灵魂深度拷问"; 
+                    if(document.getElementById('qa-module-sub')) document.getElementById('qa-module-sub').innerText = "直视内心的渴望，不要有任何保留";
+                    const qIndex = currentQaIndex - scenarioQs.length;
+                    const q = essayQs[qIndex];
+                    const savedVal = essayAnswersMap[qIndex] || '';
+                    
+                    contentHtml += `
+                        <div class="q-title">${q.title}</div>
+                        <div class="q-desc">${q.desc}</div>
+                        <textarea class="text-input" id="essayInput" placeholder="输入你的真实潜意识..." oninput="checkInput()">${savedVal}</textarea>
+                        
+                        <div class="insp-sub-text">
+                            <span>✨ 灵感比特流：</span>
+                            <span class="refresh-btn" onclick="refreshTags()">↻ 刷新</span>
+                        </div>
+                        <div class="inspiration-box" id="inspBox"></div>
+                    `;
+                } else { 
+                    generateReport(); switchView('view-qa', 'view-result'); return;
+                }
+
+                const prevDisplay = currentQaIndex === 0 ? "none" : "block";
+                const nextText = currentQaIndex === qaTotal - 1 ? "生成 NEO-ID" : "下一题";
+                contentHtml += `
+                    <div class="nav-actions">
+                        <button class="btn-prev" style="display: ${prevDisplay};" onclick="navPrev()">上一步</button>
+                        <button class="btn-next ${btnDisabled}" id="nextBtn" onclick="navNext()">${nextText}</button>
+                    </div>
+                `;
+                
+                container.innerHTML = contentHtml;
+
+                if (currentQaIndex >= scenarioQs.length) {
+                    refreshTags(); checkInput();
+                }
+            }
+
+            window.refreshTags = function() {
+                const q = essayQs[currentQaIndex - scenarioQs.length];
+                const shuffled = [...q.tags].sort(() => 0.5 - Math.random());
+                let html = '';
+                shuffled.slice(0, 4).forEach(tag => { html += `<div class="insp-hash" onclick="fillEssay('${tag}')">${tag}</div>`; });
+                document.getElementById('inspBox').innerHTML = html;
+            };
+
+            window.fillEssay = function(text) { const input = document.getElementById('essayInput'); if(!input) return; input.value = text; input.focus(); checkInput(); };
+            window.checkInput = function() { const input = document.getElementById('essayInput'); if(!input) return; const val = input.value.trim(); const btn = document.getElementById('nextBtn'); if(val) btn.classList.remove('disabled'); else btn.classList.add('disabled'); }
+
+            window.handleOptionSelect = function(el, val, scene, text) {
+                document.querySelectorAll('.opt-item').forEach(item => item.classList.remove('selected'));
+                el.classList.add('selected'); scenarioSelections[currentQaIndex] = val; 
+                userTraceLog[val].push({ scene: scene.replace(/^\d+\.\s*/, ''), choice: text });
+                document.getElementById('nextBtn').classList.remove('disabled');
+            };
+
+            window.navPrev = function() {
+                const input = document.getElementById('essayInput');
+                if(currentQaIndex >= scenarioQs.length && input) { essayAnswersMap[currentQaIndex - scenarioQs.length] = input.value.trim(); }
+                const container = document.getElementById('q-container'); container.classList.add('fade-out'); 
+                setTimeout(() => { currentQaIndex--; container.classList.remove('fade-out'); renderQaPage(); }, 200);
+            }
+
+            window.navNext = function() {
+                if(document.getElementById('nextBtn').classList.contains('disabled')) return;
+                const input = document.getElementById('essayInput');
+                if(currentQaIndex >= scenarioQs.length && input) { essayAnswersMap[currentQaIndex - scenarioQs.length] = input.value.trim(); }
+                const container = document.getElementById('q-container'); container.classList.add('fade-out'); 
+                setTimeout(() => { currentQaIndex++; container.classList.remove('fade-out'); renderQaPage(); }, 200);
+            }
+
+            function generateFinalScores() {
+                let finalScores = { ...swipeScores };
+                Object.values(scenarioSelections).forEach(val => { finalScores[val] += 3; });
+                return finalScores;
+            }
+
+            function generateSocialStats() {
+                let percent = (Math.random() * (3.5 - 0.2) + 0.2).toFixed(1); 
+                let countStr = (Math.floor(Math.random() * 50) + 5) + "," + (Math.floor(Math.random() * 899) + 100);
+                return { percent, countStr };
+            }
+
+            function getRandomLetters() { const l = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; return l.charAt(Math.floor(Math.random()*l.length)); }
+            function startAvatarAnimation() {
+                const avatars = [document.getElementById('av1'), document.getElementById('av2'), document.getElementById('av3')];
+                if(!avatars[0]) return;
+                const colors = ['#00FFFF', '#FF00FF', '#00FF41', '#FFFFFF'];
+                setInterval(() => {
+                    const targetAv = avatars[Math.floor(Math.random() * 3)];
+                    targetAv.style.transform = 'scale(0) rotate(-180deg)'; targetAv.style.opacity = '0';
+                    setTimeout(() => {
+                        targetAv.innerText = getRandomLetters(); targetAv.style.borderColor = colors[Math.floor(Math.random() * colors.length)];
+                        targetAv.style.transform = 'scale(1) rotate(0deg)'; targetAv.style.opacity = '1';
+                    }, 500); 
+                }, 2500);
+            }
+
+            function generateInsightTrace(primary) {
+                const logs = userTraceLog[primary] || [];
+                if(logs.length === 0) {
+                    return `你的基因序列极其纯粹。在整个测试过程中，系统检测到你的潜意识毫无保留地偏向了【绝对的自我掌控】。这就解释了为什么你天生就与以下专业有着宿命般的吸引力。对你而言，这不是选择题，而是你灵魂的必然归宿。`;
+                }
+                const randomLog = logs[Math.floor(Math.random() * logs.length)];
+                let psychoReason = "";
+                if(primary === "R") psychoReason = "你极其厌恶虚无的幻影。你潜意识里渴望用物理法则和亲手制造的秩序，来建立你在现实世界中的绝对存在感。";
+                if(primary === "I") psychoReason = "你无法忍受混沌与模糊。你的大脑极度渴求深度的因果和非黑即白的底层逻辑，那是你对抗不确定性的终极武器。";
+                if(primary === "A") psychoReason = "你脑海中的宇宙太庞大了，如果不释放就会自我吞噬。你需要一个高维的媒介，把你的情绪和想象力降维投射到现实。";
+                if(primary === "S") psychoReason = "你拥有一台高精度的情绪雷达。别人在冰冷地研究物，而你永远在注视活生生的人，你渴望通过系统性的力量去治愈他人。";
+                if(primary === "E") psychoReason = "你骨子里燃烧着对资源杠杆的狂热。你无法忍受被别人制定的规则束缚，你天生就是要上牌桌当庄家、建立个人版图的。";
+                if(primary === "C") psychoReason = "在这个充满变量的危险世界里，你极度迷恋绝对的掌控感。你试图通过极其严谨的规则和算力，去消除一切可能失控的风险。";
+
+                return `系统通过追踪你在测试中的行为，捕获到了你极其真实的潜意识印记。例如，当面临<b>『${randomLog.scene}』</b>时，你的第一直觉是<b>『${randomLog.choice}』</b>。<br><br>这一瞬间的决策，成为了佐证你内在驱动力的绝佳证据：${psychoReason}这就解释了为什么你天生就会被某些特定的路径所吸引。这些领域对你而言绝不只是一门手艺，而是你用来建立个人秩序、对抗现实的专属武器。`;
+            }
+
+            function getBaseAssets(primary) {
+                const db = {
+                    "R": { majorDetails: [{ name: "工程学大类 (机械/电子/材料)", desc: "这绝不仅是研究力学与电路。你天生厌恶虚无的理论，需要用物理法则亲手把想象变成能运转的现实，打造硬核实体系统。" }, { name: "建筑与环境设计", desc: "在空间中规划人类的生活容器。你渴望在这个星球上留下属于你的巨大物理痕迹，建筑是你最好的载体。" }, { name: "生物医学工程", desc: "深入微观世界改造物质特性，或制造医疗器械。你的实干精神能忍受枯燥的实验，只为锻造出能实际解决人类问题的超级工具。" }, { name: "航空航天工程", desc: "挑战物理极限，研发飞行器与未来交通工具。你的征服欲与动手能力，驱使你挑战人类机械制造的最高工业结晶。" }], careers: ["硬件研发工程师", "主治外科医生", "高级建筑设计师", "工业制造规划师"], models: [{ icon: "🛠️", name: "詹姆斯·戴森", tag: "戴森创始人 | 顶级工业设计师", desc: "亲手制作5127个原型颠覆行业的造物巨匠。" }, { icon: "⚙️", name: "卡尔·本茨", tag: "奔驰创始人 | 机械工程先驱", desc: "对机械结构有狂热实操能力的汽车之父。" }, { icon: "🏛️", name: "安藤忠雄", tag: "普利兹克奖得主 | 建筑设计大师", desc: "世界级建筑大师。将最原始物理材质玩出极致艺术。" }] },
+                    "I": { majorDetails: [{ name: "计算机科学 (CS)", desc: "运用算法与数据结构，构建数字世界的底层逻辑。你的大脑就像一台精密的解析器，极度契合代码世界中非黑即白的绝对理性和因果。" }, { name: "数据科学与统计", desc: "从海量数据中清洗、挖掘出隐藏的规律与预测模型。别人看到的是乱码，而你能敏锐地从中抽丝剥茧，找到预判未来的上帝视角。" }, { name: "基础理学 (物理/数学)", desc: "探究宇宙、物质与时空的终极运转法则。你对“为什么”有近乎病态的执念，只有最底层的宇宙真理才能满足你的智力饥渴。" }, { name: "认知与神经科学", desc: "结合心理学与生物学，破解人类大脑与意识的运作机制。你不满足于表面的人类行为，你想从物理和算法层面彻底破解“人”这台机器。" }], careers: ["核心算法工程师", "数据科学家", "基础学科研究员", "高级情报分析师"], models: [{ icon: "🖥️", name: "黄仁勋", tag: "英伟达 CEO | 芯片算力教父", desc: "深耕底层算力芯片，推动全球AI边界的极客。" }, { icon: "🔬", name: "艾伦·图灵", tag: "计算机科学之父 | 密码学家", desc: "用纯粹的数学逻辑定义计算机科学的先驱。" }, { icon: "🔭", name: "阿尔伯特·爱因斯坦", tag: "理论物理学家 | 相对论提出者", desc: "用极其优美的物理公式，重塑了人类对宇宙时空的认知。" }] },
+                    "A": { majorDetails: [{ name: "艺术与设计大类", desc: "通过视觉、听觉等媒介，将抽象概念具象化。你脑海中的情绪和灵感太过庞大，需要这些专业作为高维翻译器来释放你的宇宙。" }, { name: "戏剧与影视学", desc: "掌控光影、叙事与表演，在屏幕上构建全新的时空。你不甘于只活在现实中，你天生具有在虚拟时空中造梦并操控观众情绪的魔力。" }, { name: "人机交互设计 (HCI)", desc: "研究人与技术的交互界面，将冷酷科技包裹上人文美学。你既理解技术逻辑，又拥有对美和体验的偏执，是科技与艺术十字路口的翻译官。" }, { name: "文学与传媒", desc: "运用语言和文字的结构，传递深刻思想与时代声音。你的感知力极为敏锐，文字是你最锋利的手术刀，用来解剖这个世界的荒诞与美丽。" }], careers: ["用户体验设计师 (UX)", "影视导演/制片", "独立内容创作者", "品牌视觉创意指导"], models: [{ icon: "🎨", name: "史蒂夫·乔布斯", tag: "苹果联合创始人 | 产品美学大师", desc: "将科技与极限审美完美融合的造梦者。" }, { icon: "🎬", name: "克里斯托弗·诺兰", tag: "好莱坞殿堂级导演 | 视听构筑师", desc: "用严密逻辑构建震撼视听迷宫的造梦师。" }, { icon: "🖌️", name: "达芬奇", tag: "文艺复兴三杰 | 跨界艺术巨匠", desc: "将感性审美与解剖学融为一体的旷世全才。" }] },
+                    "S": { majorDetails: [{ name: "心理学大类", desc: "研究人类行为模式以及心理问题的干预治疗。你拥有一台极其罕见的高精度“情绪雷达”，这门学科能将你的共情力转化为治愈他人的专业武器。" }, { name: "教育学与人类发展", desc: "研究知识的传递规律与个体成长轨迹。你天生具有引领他人成长的使命感，你最巨大的成就感来源于看到另一个生命的绽放。" }, { name: "社会学与公共政策", desc: "宏观分析社会结构、群体矛盾并制定政策。你的悲悯心不局限于个体，你渴望通过系统性的力量去改变更广泛的弱势群体的命运。" }, { name: "公共卫生与医疗护理", desc: "关注人群疾病预防、健康促进与临床照护。面对他人的苦难你无法袖手旁观，这门学科赋予你最直接、最真实的拯救力量。" }], careers: ["临床心理咨询师", "社会政策研究员", "教育产品研发专家", "人力资源专家 (HR)"], models: [{ icon: "🎙️", name: "罗翔", tag: "中国政法大学教授 | 普法先锋", desc: "用极具悲悯心和同理心的表达完成大众启蒙。" }, { icon: "🤝", name: "萨提亚·纳德拉", tag: "微软 CEO | 科技领袖", desc: "以极强的同理心重塑企业文化，将共情力转化为驱动科技帝国的系统。" }, { icon: "🕊️", name: "特蕾莎修女", tag: "诺贝尔和平奖得主 | 慈善家", desc: "将极强的共情力化作实际行动，改变边缘人命运。" }] },
+                    "E": { majorDetails: [{ name: "商科与管理大类", desc: "研究企业组织的战略运转、资源整合与商业模式创新。你骨子里有不甘平庸的征服欲，商业知识是你用来撬动世界、建立个人版图的杠杆工具。" }, { name: "经济学与金融", desc: "探究资本流动规律、市场供需模型与宏观经济周期。你对风险和收益有着野兽般的直觉，这门学科能让你看懂世界的底牌，并在博弈中胜出。" }, { name: "市场营销与公关", desc: "洞察消费者心理，建立品牌势能。你极具说服力和煽动力，享受那种把自己的理念植入别人大脑并变现的过程。" }, { name: "法学与国际关系", desc: "掌握维系社会运转的底层契约，或在国家级别的棋盘上博弈。你渴望掌握权力的规则，在这个充满制定与被制定关系的世界里，你选择成为制定者。" }], careers: ["商业拓展经理 (BD)", "投资银行分析师", "市场营销总监", "高级法律顾问"], models: [{ icon: "🚀", name: "埃隆·马斯克", tag: "特斯拉/SpaceX CEO | 科技狂人", desc: "用第一性原理构建宏大版图的开创者。" }, { icon: "📈", name: "沃伦·巴菲特", tag: "伯克希尔董事长 | 价值投资之父", desc: "以极度自律的纪律掌控资本帝国的理性大脑。" }, { icon: "🦅", name: "杰夫·贝佐斯", tag: "亚马逊创始人 | 电商帝国缔造者", desc: "用极度冷酷的长期数据逻辑，构建庞大电商帝国。" }] },
+                    "C": { majorDetails: [{ name: "财务与会计学大类", desc: "建立极其严密的财务审计体系，监控企业经济血脉。面对混沌你深感不适，这门学科能让你用绝对精确的数字，构建出无懈可击的安全感。" }, { name: "供应链管理", desc: "统筹从原料到终端极其复杂的全球物流、信息流与资金流。你的大脑就像一台超级统筹机，能在千头万绪的乱麻中，迅速建立起如钟表般完美的秩序。" }, { name: "信息安全与数据管理", desc: "构筑坚不可摧的数字防御系统，保护核心数据安全。你天生谨慎且注重风控，成为抵御不确定性风险的“守门人”是你最核心的价值。" }, { name: "精算与风险管理", desc: "运用复杂数学模型，量化评估未来的金融和保险风险。你极其厌恶失控，这门学科赋予你用概率论“算透”未来的能力，让你成为机构的定海神针。" }], careers: ["高级精算师", "系统架构工程师", "全球供应链规划师", "合规审计专家"], models: [{ icon: "⚙️", name: "蒂姆·库克", tag: "苹果 CEO | 全球供应链大师", desc: "在极度复杂的供应链中建立完美秩序的大师。" }, { icon: "🧠", name: "瑞·达利欧", tag: "桥水基金创始人 | 宏观对冲专家", desc: "用机器般的算法逻辑管理数千亿资产。" }, { icon: "📐", name: "查理·芒格", tag: "投资思想家 | 跨学科智慧大师", desc: "用极其严密的跨学科思维格栅，过滤一切投资风险。" }] }
+                };
+                return db[primary];
+            }
+
+            const matrixDB = {
+                "IE": { weakness: "极度厌恶愚蠢且低效的流程，容易对动作慢、讲废话的队友失去耐心。在缺乏目标感的团队中会感到极度窒息。", majorDetails: [{ name: "计算机科学大类", desc: "结合算法算力与海量数据，训练智能模型。你的极客内核渴望用最高维的技术，对旧有生产力进行冷酷的降维打击。" }, { name: "商业分析 (Business Analytics)", desc: "用硬核的统计和编程工具，挖掘商业数据背后的战略增长点。你的上帝视角让你能用数据直接洞穿商业的底牌，预判未来的剧本。" }, { name: "金融科技 (FinTech)", desc: "将前沿计算机技术与复杂金融衍生品结合。极度的理性和对杠杆的渴望，让你成为在技术与资本十字路口最致命的猎手。" }], careers: ["AI产品经理", "商业数据分析师", "量化研究员", "科技战略顾问"], models: [ { icon: "💡", name: "Sam Altman", tag: "OpenAI CEO | AI革命推动者", desc: "用极致的AI技术撬动全球资本。" }, { icon: "💻", name: "Bill Gates", tag: "微软创始人 | 软件帝国缔造者", desc: "将冰冷代码转化为商业帝国。" }, { icon: "🧠", name: "张一鸣", tag: "字节跳动创始人 | 算法推荐先锋", desc: "用极其严密的推荐算法逻辑颠覆分发行业。" }] },
+                "EI": { weakness: "掌控欲极强，面对无法被数据量化、无法被逻辑推演的“模糊感性地带”会感到焦虑和急躁。", majorDetails: [{ name: "经济学与金融工程", desc: "运用极其严密的数学模型，设计、定价复杂的金融资产。你的野心巨大且冷酷，需要用最高阶的数学逻辑武装自己，在丛林法则中实现降维收割。" }, { name: "科技企业管理", desc: "专注于高新技术企业的战略规划与投融资。你明白单靠自己写代码无法改变世界，你选择成为调配顶尖极客和庞大资金的操盘手。" }, { name: "量化投资与对冲基金", desc: "通过编写自动化交易算法捕捉市场套利机会。你厌恶主观情绪带来的风险，只相信冰冷代码和数据跑出来的绝对赢面。" }], careers: ["行业投资分析师", "企业战略规划师", "商业银行经理", "并购交易员"], models: [ { icon: "🚀", name: "Elon Musk", tag: "特斯拉/SpaceX CEO | 科技狂人", desc: "用第一性原理推演宏大的商业版图。" }, { icon: "🦅", name: "Jeff Bezos", tag: "亚马逊创始人 | 电商帝国缔造者", desc: "用极度冷酷的长期数据逻辑构建帝国。" }, { icon: "♟️", name: "Peter Thiel", tag: "PayPal联合创始人 | 硅谷创投教父", desc: "用逆向思维寻找绝对垄断的赛道。" }] }
+            };
+
+            let currentRoleName = ""; let currentQuote = ""; let currentPercent = "";
+
+            function generateReport() {
+                let finalScores = generateFinalScores();
+                const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
+                const primary = sorted[0][0]; const pScore = sorted[0][1];
+                const secondary = sorted[1][0]; const code = primary + secondary; 
+                
+                const pName = traitDict[primary].name; const sName = traitDict[secondary].name;
+                currentQuote = quotesDB[code] || `你不仅是${pName}，更带有${sName}的锋芒。`;
+                currentRoleName = `${pName} × ${sName}`;
+
+                let match = {
+                    weakness: `极度抗拒那些完全违背你“${pName}”核心直觉的环境。如果把你放在一个无法发挥你特长的死板体系中，你的天赋将会被彻底封印。`, 
+                    majorDetails: [
+                        { name: "跨学科创新专业", desc: "结合不同领域的知识体系解决复杂问题。你的灵魂拒绝被单一标签定义，天生具备在不同领域之间建立奇妙虫洞的能力。" },
+                        { name: "文理学院 (Liberal Arts)", desc: "注重通识教育与思维底层架构的培养。这能为你提供极其广阔的思维格栅，让你在未来的交叉领域里自由穿梭。" },
+                        { name: "认知与行为科学", desc: "交叉融合心理学、生物学与计算机科学。这种多维度的探索极其契合你渴望打破边界的探索欲。" }
+                    ],
+                };
+
+                const assets = getBaseAssets(primary);
+                if(matrixDB[code]) { 
+                    match.weakness = matrixDB[code].weakness;
+                    match.majorDetails = matrixDB[code].majorDetails;
+                    match.careers = matrixDB[code].careers;
+                    match.models = matrixDB[code].models;
+                } else { 
+                    match.majorDetails = assets.majorDetails; 
+                    match.careers = assets.careers; 
+                    match.models = assets.models; 
+                }
+
+                document.getElementById('resMajorReason').innerHTML = generateInsightTrace(primary);
+                document.getElementById('resRoleName').innerText = currentRoleName;
+                document.getElementById('resCodeSuffix').innerText = `(${code})`;
+                document.getElementById('resQuote').innerText = currentQuote;
+                
+                let rarity = "SSR 级天赋";
+                if (pScore >= 12) rarity = "UR 级判定 (稀有)"; else if (Math.abs(pScore - sorted[1][1]) <= 1) rarity = "均衡判定体"; 
+                document.getElementById('resRarity').innerText = rarity;
+
+                const stats = generateSocialStats();
+                currentPercent = stats.percent + "%";
+                document.getElementById('resPercent').innerText = currentPercent;
+                document.getElementById('resCount').innerText = stats.countStr;
+                document.getElementById('resPrimaryName').innerText = pName;
+
+                const maxScore = Math.max(pScore, 10); let barsHtml = '';
+                const colorsArr = ["var(--neon-cyan)", "var(--neon-magenta)", "var(--neon-green)"];
+                for(let i=0; i<3; i++) {
+                    let t = sorted[i][0]; let s = sorted[i][1]; let pct = Math.min((s / maxScore) * 100, 100);
+                    let color = colorsArr[i];
+                    barsHtml += `
+                    <div class="stat-block">
+                        <div class="stat-row">
+                            <div class="stat-label">${traitDict[t].name} <span>(${traitDict[t].en})</span></div>
+                            <div class="stat-score" style="color: ${color}; text-shadow: 0 0 10px ${color};">${s}</div>
+                        </div>
+                        <div class="stat-bar-bg">
+                            <div class="stat-bar-fill" style="width: ${pct}%; background: ${color}; box-shadow: 0 0 10px ${color};"></div>
+                        </div>
+                        <div class="stat-desc">${traitDict[t].desc}</div>
+                    </div>`;
+                }
+                document.getElementById('resScoreBars').innerHTML = barsHtml;
+                document.getElementById('resWeakness').innerText = match.weakness;
+
+                let majorDetailsHtml = ''; 
+                match.majorDetails.forEach(mj => { 
+                    majorDetailsHtml += `
+                    <div class="major-item-neo">
+                        <div class="major-title-neo">${mj.name}</div>
+                        <div class="major-desc-neo">${mj.desc}</div>
+                    </div>`; 
+                });
+                document.getElementById('resMajorDetails').innerHTML = majorDetailsHtml;
+
+                let careerTagsHtml = ''; match.careers.forEach(cr => { careerTagsHtml += `<div class="career-pill">${cr}</div>`; });
+                document.getElementById('resCareersTags').innerHTML = careerTagsHtml;
+
+                let modelsHtml = ""; match.models.forEach(m => { modelsHtml += `<div class="mentor-item"><div class="mentor-icon">${m.icon}</div><div class="mentor-name">${m.name}</div><div class="mentor-tag">${m.tag}</div><div class="mentor-desc">${m.desc}</div></div>`; });
+                document.getElementById('resModelsGrid').innerHTML = modelsHtml;
+
+                startAvatarAnimation();
+            }
+
+            window.openPoster = function() {
+                document.getElementById('posterRoleName').innerText = currentRoleName;
+                document.getElementById('posterQuoteText').innerText = `“${currentQuote}”`;
+                document.getElementById('posterPercentText').innerText = currentPercent;
+                switchView('view-result', 'view-poster');
+            }
+
+            window.closePoster = function() { switchView('view-poster', 'view-result'); }
+
+            function switchView(hideId, showId) { 
+                const hideEl = document.getElementById(hideId);
+                const showEl = document.getElementById(showId);
+                if(hideEl) hideEl.classList.remove('active'); 
+                if(showEl) setTimeout(() => showEl.classList.add('active'), 50); 
+            }
+
+            // Init
+            initSwipe();
+        });
+    </script>
+</body>
+</html>
